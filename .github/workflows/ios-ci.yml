@@ -81,7 +81,8 @@ jobs:
         run: xcrun simctl bootstatus "$UDID" -b
 
       # The recording now covers only the test run, not the build.
-      - name: Run tests while recording the screen
+      # -only-testing:TapFrenzyUITests runs only the UI test bundle.
+      - name: Run UI tests while recording the screen
         shell: bash
         run: |
           set -uo pipefail
@@ -92,15 +93,18 @@ jobs:
           xcodebuild test-without-building \
             -project TapFrenzy.xcodeproj \
             -scheme TapFrenzy \
+            -only-testing:TapFrenzyUITests \
             -destination "platform=iOS Simulator,id=$UDID" \
             -derivedDataPath build \
             -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult 2>&1 | tee xcodebuild.log
           TEST_STATUS=${PIPESTATUS[0]}
 
-          sleep 1
+          # Give the recorder time to write the end of the file before stopping it
+          sleep 3
           kill -SIGINT "$REC_PID" || true
           wait "$REC_PID" || true
+          ls -l recording.mov || echo "No recording file was created"
           exit "$TEST_STATUS"
 
       # MP4 for a full-quality link, plus a small GIF that shows inline in the summary.
