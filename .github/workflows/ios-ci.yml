@@ -208,3 +208,20 @@ jobs:
             xcodebuild.log
           if-no-files-found: warn
           retention-days: 7
+            # Zip the simulator app so it can be uploaded to Appetize
+      - name: Package simulator app for Appetize
+        if: always()
+        run: |
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "TapFrenzy.app" -type d)
+          if [ -z "$APP" ]; then echo "No simulator app found"; exit 0; fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP" TapFrenzy-simulator.zip
+          ls -lh TapFrenzy-simulator.zip
+
+      - name: Upload simulator app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapFrenzy-simulator-app
+          path: TapFrenzy-simulator.zip
+          if-no-files-found: warn
+          retention-days: 7    
