@@ -1,0 +1,509 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */; };
+		9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E549CDF39697F1AEA383E /* ContentView.swift */; };
+		4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */; };
+		3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08373860A73CDF7E3B19B73E /* GameLogicTests.swift */; };
+		A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FDA9C6BF294ECA1E1CE81390 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B61767D7DB558A1F1E497FF2;
+			remoteInfo = TapFrenzy;
+		};
+		8D4BA0B21411498221162BBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B61767D7DB558A1F1E497FF2;
+			remoteInfo = TapFrenzy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyApp.swift; sourceTree = "<group>"; };
+		371E549CDF39697F1AEA383E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogic.swift; sourceTree = "<group>"; };
+		08373860A73CDF7E3B19B73E /* GameLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogicTests.swift; sourceTree = "<group>"; };
+		24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyUITests.swift; sourceTree = "<group>"; };
+		40EA61766946C0CEBF0945B4 /* TapFrenzy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TapFrenzy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TapFrenzyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TapFrenzyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5168F33626E649A18A20278B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		77DF01E585690BF24CF9DAE6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1F836E26849E72D916E33D2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8D3FC6DB5D0827F168A73277 = {
+			isa = PBXGroup;
+			children = (
+				CE882751F8B3EE4485706ED4 /* TapFrenzy */,
+				24DFAD7E3B56719996E6F208 /* TapFrenzyTests */,
+				0F4A94EC4B20B287560995E2 /* TapFrenzyUITests */,
+				1BADDC1D73C1A20F347483E1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CE882751F8B3EE4485706ED4 /* TapFrenzy */ = {
+			isa = PBXGroup;
+			children = (
+				1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */,
+				371E549CDF39697F1AEA383E /* ContentView.swift */,
+				C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */,
+			);
+			path = TapFrenzy;
+			sourceTree = "<group>";
+		};
+		24DFAD7E3B56719996E6F208 /* TapFrenzyTests */ = {
+			isa = PBXGroup;
+			children = (
+				08373860A73CDF7E3B19B73E /* GameLogicTests.swift */,
+			);
+			path = TapFrenzyTests;
+			sourceTree = "<group>";
+		};
+		0F4A94EC4B20B287560995E2 /* TapFrenzyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */,
+			);
+			path = TapFrenzyUITests;
+			sourceTree = "<group>";
+		};
+		1BADDC1D73C1A20F347483E1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				40EA61766946C0CEBF0945B4 /* TapFrenzy.app */,
+				B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */,
+				380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B61767D7DB558A1F1E497FF2 /* TapFrenzy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94C86E687B7AD02A1B29F08B /* Build configuration list for PBXNativeTarget "TapFrenzy" */;
+			buildPhases = (
+				9089A1DE1DDF3122481EBABA /* Sources */,
+				5168F33626E649A18A20278B /* Frameworks */,
+				D0995FD86A7BBFADD891C911 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TapFrenzy;
+			productName = TapFrenzy;
+			productReference = 40EA61766946C0CEBF0945B4 /* TapFrenzy.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7C6F3B06E869C373BAEBD9D2 /* TapFrenzyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1F240FF616B2888C660C9A0B /* Build configuration list for PBXNativeTarget "TapFrenzyTests" */;
+			buildPhases = (
+				BA4CC1F9E017B2B4BCFFDC16 /* Sources */,
+				77DF01E585690BF24CF9DAE6 /* Frameworks */,
+				A177DD75A4CE1B7CA38FB9A3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF5E088CD095E238B596D42E /* PBXTargetDependency */,
+			);
+			name = TapFrenzyTests;
+			productName = TapFrenzyTests;
+			productReference = B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		46AB4DE2F40C65282C82311C /* TapFrenzyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 57B0216D6075BEFFF3C6C567 /* Build configuration list for PBXNativeTarget "TapFrenzyUITests" */;
+			buildPhases = (
+				1B82B9719B103E4D21565EF8 /* Sources */,
+				F1F836E26849E72D916E33D2 /* Frameworks */,
+				DE18445420C0B79162BA1E90 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				12910AB179B2FE4F90A1EDF7 /* PBXTargetDependency */,
+			);
+			name = TapFrenzyUITests;
+			productName = TapFrenzyUITests;
+			productReference = 380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					B61767D7DB558A1F1E497FF2 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					7C6F3B06E869C373BAEBD9D2 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = B61767D7DB558A1F1E497FF2;
+					};
+					46AB4DE2F40C65282C82311C = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = B61767D7DB558A1F1E497FF2;
+					};
+				};
+			};
+			buildConfigurationList = 5BF065D48D8C23D03623AA6A /* Build configuration list for PBXProject "TapFrenzy" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 8D3FC6DB5D0827F168A73277;
+			productRefGroup = 1BADDC1D73C1A20F347483E1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B61767D7DB558A1F1E497FF2 /* TapFrenzy */,
+				7C6F3B06E869C373BAEBD9D2 /* TapFrenzyTests */,
+				46AB4DE2F40C65282C82311C /* TapFrenzyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0995FD86A7BBFADD891C911 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A177DD75A4CE1B7CA38FB9A3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE18445420C0B79162BA1E90 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9089A1DE1DDF3122481EBABA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */,
+				9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */,
+				4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA4CC1F9E017B2B4BCFFDC16 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B82B9719B103E4D21565EF8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EF5E088CD095E238B596D42E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B61767D7DB558A1F1E497FF2 /* TapFrenzy */;
+			targetProxy = FDA9C6BF294ECA1E1CE81390 /* PBXContainerItemProxy */;
+		};
+		12910AB179B2FE4F90A1EDF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B61767D7DB558A1F1E497FF2 /* TapFrenzy */;
+			targetProxy = 8D4BA0B21411498221162BBB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		FA9139DD8B03E3F922556BF8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FFE2104CCFAB79205AC64460 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		26A712CC4B3E216C08BD361C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap Frenzy";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		35C94972FDBA5C18011EA62B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap Frenzy";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		33B060AB642862CE29034C04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapFrenzy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TapFrenzy";
+			};
+			name = Debug;
+		};
+		5EAE4030F9C42DA75847C0C5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapFrenzy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TapFrenzy";
+			};
+			name = Release;
+		};
+		876BBD160AF3F89AD52DC1D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TapFrenzy;
+			};
+			name = Debug;
+		};
+		220A570CD29B816101040841 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TapFrenzy;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5BF065D48D8C23D03623AA6A /* Build configuration list for PBXProject "TapFrenzy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA9139DD8B03E3F922556BF8 /* Debug */,
+				FFE2104CCFAB79205AC64460 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94C86E687B7AD02A1B29F08B /* Build configuration list for PBXNativeTarget "TapFrenzy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26A712CC4B3E216C08BD361C /* Debug */,
+				35C94972FDBA5C18011EA62B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1F240FF616B2888C660C9A0B /* Build configuration list for PBXNativeTarget "TapFrenzyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				33B060AB642862CE29034C04 /* Debug */,
+				5EAE4030F9C42DA75847C0C5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		57B0216D6075BEFFF3C6C567 /* Build configuration list for PBXNativeTarget "TapFrenzyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				876BBD160AF3F89AD52DC1D8 /* Debug */,
+				220A570CD29B816101040841 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}
