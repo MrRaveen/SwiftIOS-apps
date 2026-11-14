@@ -50,12 +50,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
-          key: brew-${{ runner.os }}-xcodegen-ffmpeg-v1
+          key: brew-${{ runner.os }}-ffmpeg-v1
 
-      - name: Install XcodeGen and generate the project
-        run: |
-          brew install xcodegen
-          xcodegen generate
+      # The Xcode project (TapFrenzy.xcodeproj) is committed to the repo,
+      # so no project generator is needed here.
 
       # Compile the app and the tests (no simulator needed yet).
       # ffmpeg installs in parallel, because it is only needed after the test.
@@ -208,7 +206,8 @@ jobs:
             xcodebuild.log
           if-no-files-found: warn
           retention-days: 7
-            # Zip the simulator app so it can be uploaded to Appetize
+
+      # Zip the simulator app so it can be uploaded to Appetize
       - name: Package simulator app for Appetize
         if: always()
         run: |
@@ -224,4 +223,4 @@ jobs:
           name: TapFrenzy-simulator-app
           path: TapFrenzy-simulator.zip
           if-no-files-found: warn
-          retention-days: 7    
+          retention-days: 7

@@ -38,4 +38,3 @@ final class GameLogicTests: XCTestCase {
         XCTAssertEqual(GameLogic.statusText(phase: .over, timeLeft: 0), "Times up!")
     }
 }
-
