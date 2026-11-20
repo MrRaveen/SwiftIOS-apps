@@ -1,0 +1,2066 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/workflows/ios-ci.yml
+.gitignore
+README.md
+TapFrenzy.xcodeproj/project.pbxproj
+TapFrenzy.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+TapFrenzy.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+TapFrenzy.xcodeproj/xcshareddata/xcschemes/TapFrenzy.xcscheme
+TapFrenzy/Card.swift
+TapFrenzy/CardGridView.swift
+TapFrenzy/CardView.swift
+TapFrenzy/GameLogic.swift
+TapFrenzy/GameView.swift
+TapFrenzy/HomeView.swift
+TapFrenzy/Level.swift
+TapFrenzy/TapFrenzyApp.swift
+TapFrenzyTests/GameLogicTests.swift
+TapFrenzyUITests/TapFrenzyUITests.swift
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="TapFrenzy/Card.swift">
+import Foundation
+
+struct Card: Identifiable {
+    let id: Int      // unique number for each card, used by ForEach
+    var isLit: Bool  // true = lit up, false = off
+}
+</file>
+
+<file path="TapFrenzy/CardGridView.swift">
+import SwiftUI
+
+struct CardGridView: View {
+    @State private var level: Level = .l1
+    @State private var cards: [Card] = (0..<Level.l1.gridCount).map { Card(id: $0, isLit: false) }
+    @State private var score = 0
+    // Seconds passed in the round
+    @State private var elapsed: TimeInterval = 0
+    // Cards that are flashing right now, keyed by card id
+    @State private var flashes: [Int: FeedbackKind] = [:]
+
+    private static let flipInterval: TimeInterval = 1.0   // seconds between new lit cards
+    private static let penalty = 1                        // points lost on a wrong tap or a missed card
+
+    // Lights a new card every flipInterval seconds
+    private let flipTimer = Timer.publish(every: CardGridView.flipInterval, on: .main, in: .common).autoconnect()
+    // Moves the round clock forward every 0.1 seconds
+    private let roundTimer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+
+    private let columns = [GridItem(.adaptive(minimum: 80), spacing: 12)]
+
+    private var roundOver: Bool { elapsed >= GameLogic.duration }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("Score: \(score)   \(level.title)")
+                .font(.system(size: 17, weight: .bold))
+
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(cards) { card in
+                        CardView(card: card, flash: flashes[card.id]) {
+                            handleTap(card)
+                        }
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .onReceive(flipTimer) { _ in lightRandomCard() }
+        .onReceive(roundTimer) { _ in advanceRound() }
+    }
+
+    // MARK: Round clock and levels
+
+    private func advanceRound() {
+        guard !roundOver else { return }
+        elapsed += 0.1
+
+        let newLevel = Level.forElapsed(elapsed)
+        if newLevel != level {
+            level = newLevel
+            // The grid size comes from the level, so a new level rebuilds the cards.
+            // The grid reflows automatically because ForEach gets a different count.
+            cards = (0..<newLevel.gridCount).map { Card(id: $0, isLit: false) }
+        }
+    }
+
+    // MARK: Lighting cards
+
+    // Picks one card that is off, turns it on, and schedules it to turn off
+    private func lightRandomCard() {
+        guard !roundOver else { return }
+
+        let offIDs = cards.filter { !$0.isLit }.map { $0.id }
+        guard let pickedID = offIDs.randomElement() else { return }
+
+        setLit(id: pickedID, to: true)
+
+        // The window length comes from the current level
+        DispatchQueue.main.asyncAfter(deadline: .now() + level.litWindow) {
+            expireIfStillLit(pickedID)
+        }
+    }
+
+    // Runs when the window ends. If the card is still lit, the player missed it.
+    // A tap would have cleared the lit state, so a tapped card is skipped here.
+    private func expireIfStillLit(_ id: Int) {
+        guard let card = cards.first(where: { $0.id == id }), card.isLit else { return }
+        setLit(id: id, to: false)
+        score = max(0, score - CardGridView.penalty)
+        flash(id, .wrong)
+    }
+
+    // MARK: Taps
+
+    private func handleTap(_ card: Card) {
+        guard !roundOver else { return }
+
+        if card.isLit {
+            // Correct: score up and clear the lit state
+            score += 1
+            setLit(id: card.id, to: false)
+            flash(card.id, .correct)
+        } else {
+            // Wrong card: small penalty, but never below 0
+            score = max(0, score - CardGridView.penalty)
+            flash(card.id, .wrong)
+        }
+    }
+
+    // MARK: Helpers
+
+    private func setLit(id: Int, to value: Bool) {
+        guard let index = cards.firstIndex(where: { $0.id == id }) else { return }
+        cards[index].isLit = value
+    }
+
+    // Shows a green or red flash for a short time, then clears it
+    private func flash(_ id: Int, _ kind: FeedbackKind) {
+        withAnimation(.easeOut(duration: 0.15)) {
+            flashes[id] = kind
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                flashes[id] = nil
+            }
+        }
+    }
+}
+
+#Preview {
+    CardGridView()
+}
+</file>
+
+<file path="TapFrenzy/CardView.swift">
+import SwiftUI
+
+// The two kinds of feedback flash
+enum FeedbackKind {
+    case correct
+    case wrong
+}
+
+struct CardView: View {
+    let card: Card
+    // nil when the card isn't flashing
+    var flash: FeedbackKind? = nil
+    // Runs when the card is tapped. The parent decides what happens.
+    let onTap: () -> Void
+
+    // Flash colour wins over the normal lit and unlit colours
+    private var fillColor: Color {
+        switch flash {
+        case .correct: return .green
+        case .wrong: return Constants.trapRed
+        case nil: return card.isLit ? Constants.accentsBlue : Constants.trackGray
+        }
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(fillColor)
+                .aspectRatio(1, contentMode: .fit)
+                .scaleEffect(card.isLit ? 1.08 : 1)
+                .animation(.easeInOut, value: card.isLit)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+#Preview {
+    CardView(card: Card(id: 0, isLit: true), onTap: {})
+}
+</file>
+
+<file path="TapFrenzy/GameView.swift">
+import SwiftUI
+
+// Colors taken from the Figma design, plus two for the new features
+enum Constants {
+    static let accentsBlue = Color(red: 0, green: 0.53, blue: 1)
+    static let trackGray = Color(white: 0.9)
+    static let pillGray = Color(white: 0.96)
+    static let trapRed = Color(red: 1, green: 0.23, blue: 0.19)
+    static let comboOrange = Color(red: 1, green: 0.58, blue: 0)
+}
+
+struct GameView: View {
+    // The mode is passed in from the Home screen
+    let mode: GameMode
+
+    // Game state
+    @State private var phase: GamePhase = .idle
+    @State private var score = 0
+    @State private var timeLeft: TimeInterval = GameLogic.duration
+    @State private var endDate = Date()
+
+    // Combo state (C1)
+    @State private var multiplier = 1
+    @State private var lastTapDate: Date? = nil
+
+    // Trap colour state (C2)
+    @State private var trapActive = false
+    @State private var trapEndDate = Date()
+    @State private var nextTrapDate = Date()
+
+    // Best score is saved per mode, so Classic and Trap keep separate records.
+    // The key can't be set in the normal way, so it is set in init below.
+    @AppStorage private var bestScore: Int
+
+    // Traps only exist in Trap mode. The UI test turns them off too.
+    private var trapsEnabled: Bool { mode.hasTraps && !LaunchFlags.uiTesting }
+    private let comboEnabled = !LaunchFlags.uiTesting
+
+    // Fires every 0.05s. The handler only does work while the phase is .playing.
+    private let ticker = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+
+    init(mode: GameMode) {
+        self.mode = mode
+        _bestScore = AppStorage(wrappedValue: 0, mode.bestScoreKey)
+    }
+
+    var body: some View {
+        // GeometryReader tells us if the phone is turned sideways,
+        // so the layout can change and still fit on the screen.
+        GeometryReader { geo in
+            let landscape = geo.size.width > geo.size.height
+
+            ZStack {
+                Color.white.ignoresSafeArea()
+
+                VStack(spacing: landscape ? 8 : 12) {
+                    TitlePill(compact: landscape)
+
+                    switch phase {
+                    case .idle, .playing:
+                        gameScreen(landscape: landscape)
+                    case .over:
+                        resultScreen(landscape: landscape)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .frame(maxWidth: landscape ? 700 : 400)
+            }
+        }
+                .onReceive(ticker) { _ in tick() }
+        // Show a normal Back button at the top, with no title text
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("")
+    }
+
+    // MARK: Screen 1 - idle and playing
+
+    @ViewBuilder
+    private func gameScreen(landscape: Bool) -> some View {
+        if landscape {
+            // Sideways: texts on the left, big button on the right
+            HStack(alignment: .center, spacing: 24) {
+                infoBlock(compact: true)
+                    .frame(maxWidth: .infinity)
+                tapButton(size: 170)
+            }
+            .foregroundColor(.black)
+        } else {
+            VStack(spacing: 12) {
+                infoBlock(compact: false)
+                tapButton(size: 229)
+            }
+            .foregroundColor(.black)
+        }
+    }
+
+    // Score, combo badge, timer bar and status text
+    private func infoBlock(compact: Bool) -> some View {
+        VStack(spacing: compact ? 4 : 12) {
+            Text("Score")
+                .font(.system(size: 17, weight: .bold))
+                .frame(height: compact ? 28 : 39)
+
+            scoreRow(compact: compact)
+
+            // Full at the start, shrinks to nothing when time is up
+            TimerBar(progress: GameLogic.remainingFraction(timeLeft: timeLeft))
+                .frame(height: compact ? 32 : 44)
+
+            Text(GameLogic.statusText(phase: phase, timeLeft: timeLeft, trapActive: trapActive))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(trapActive ? Constants.trapRed : .black)
+                .frame(height: compact ? 28 : 39)
+        }
+    }
+
+    // The score in the middle. The "x2!" badge sits on its right and only shows during a combo.
+    // The empty space on the left keeps the score centered.
+    private func scoreRow(compact: Bool) -> some View {
+        HStack(spacing: 8) {
+            Color.clear
+                .frame(width: 44, height: 1)
+                .accessibilityHidden(true)
+
+            Text("\(score)")
+                .font(.system(size: 17, weight: .bold))
+                .accessibilityIdentifier("scoreValue")
+
+            Text("x\(multiplier)!")
+                .font(.system(size: 17, weight: .heavy))
+                .foregroundColor(Constants.comboOrange)
+                .frame(width: 44, alignment: .leading)
+                .opacity(multiplier >= 2 ? 1 : 0)
+                .animation(.easeOut(duration: 0.1), value: multiplier)
+                .accessibilityHidden(multiplier < 2)
+                .accessibilityIdentifier("comboBadge")
+        }
+        .frame(height: compact ? 28 : 39)
+    }
+
+    // The big round button. It turns red during a trap.
+    private func tapButton(size: CGFloat) -> some View {
+        Button(action: handleTap) {
+            ZStack {
+                Circle().fill(trapActive ? Constants.trapRed : Constants.accentsBlue)
+                Text(trapActive ? "Trap!" : "Tap")
+                    .font(.system(size: size * 0.175, weight: .light))
+                    .foregroundColor(.white)
+            }
+            .frame(width: size, height: size)
+            .contentShape(Circle())
+        }
+        .buttonStyle(PressScaleStyle())
+        .animation(.easeInOut(duration: 0.1), value: trapActive)
+        .accessibilityIdentifier("tapButton")
+    }
+
+    // MARK: Screen 2 - result
+
+    @ViewBuilder
+    private func resultScreen(landscape: Bool) -> some View {
+        if landscape {
+            HStack(spacing: 40) {
+                VStack(spacing: 4) {
+                    Text("Times up!")
+                        .font(.system(size: 17, weight: .bold))
+                        .frame(height: 28)
+
+                    Text("Your score")
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(height: 28)
+
+                    Text("\(score)")
+                        .font(.system(size: 40, weight: .bold))
+                        .frame(height: 49)
+                        .accessibilityIdentifier("finalScore")
+                }
+
+                VStack(spacing: 12) {
+                    bestScoreText
+                    playAgainButton
+                }
+            }
+            .foregroundColor(.black)
+        } else {
+            VStack(spacing: 12) {
+                Text("Times up!")
+                    .font(.system(size: 17, weight: .bold))
+                    .frame(height: 39)
+
+                Text("Your score")
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(height: 39)
+
+                Text("\(score)")
+                    .font(.system(size: 40, weight: .bold))
+                    .frame(height: 49)
+                    .accessibilityIdentifier("finalScore")
+
+                bestScoreText
+
+                playAgainButton
+                    .padding(.top, 12)
+            }
+            .foregroundColor(.black)
+        }
+    }
+
+    private var bestScoreText: some View {
+        Text("Best: \(bestScore)")
+            .font(.system(size: 17, weight: .medium))
+            .frame(height: 39)
+            .accessibilityIdentifier("bestScore")
+    }
+
+    // The design has no button here, but the brief says "try again", so we add a simple one.
+    private var playAgainButton: some View {
+        Button(action: playAgain) {
+            Text("Play again")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 12)
+                .background(Constants.accentsBlue)
+                .clipShape(Capsule())
+        }
+        .accessibilityIdentifier("playAgainButton")
+    }
+
+    // MARK: Game actions
+
+    private func handleTap() {
+        switch phase {
+        case .idle:
+            startRound()
+            score = 1                   // the tap that starts the round also counts
+            lastTapDate = Date()
+        case .playing:
+            registerPlayingTap()
+        case .over:
+            break
+        }
+    }
+
+    // A tap while the round is running
+    private func registerPlayingTap() {
+        let now = Date()
+
+        // Ignore a tap that arrives after the time is up but before the timer noticed
+        guard now < endDate else { return }
+
+        // C2: tapping during a trap costs points and breaks the combo
+        if trapActive {
+            score = GameLogic.scoreAfterTrapTap(score: score)
+            multiplier = 1
+            lastTapDate = nil
+            return
+        }
+
+        // C1: a fast tap raises the multiplier, a slow tap resets it to x1
+        if comboEnabled {
+            let gap = lastTapDate.map { now.timeIntervalSince($0) }
+            multiplier = GameLogic.nextMultiplier(current: multiplier, secondsSinceLastTap: gap)
+        } else {
+            multiplier = 1
+        }
+        score += multiplier
+        lastTapDate = now
+    }
+
+    private func startRound() {
+        let now = Date()
+        score = 0
+        timeLeft = GameLogic.duration
+        endDate = now.addingTimeInterval(GameLogic.duration)
+        multiplier = 1
+        lastTapDate = nil
+        trapActive = false
+        nextTrapDate = now.addingTimeInterval(TimeInterval.random(in: GameLogic.trapGapRange))
+        phase = .playing
+    }
+
+    // Called by the timer. Uses the real clock (endDate) so the countdown stays accurate.
+    private func tick() {
+        guard phase == .playing else { return }
+        let now = Date()
+        timeLeft = max(0, endDate.timeIntervalSince(now))
+        if timeLeft <= 0 {
+            finishRound()
+            return
+        }
+
+        // C1: the combo ends when no tap came within 300 ms
+        if multiplier > 1, let last = lastTapDate,
+           now.timeIntervalSince(last) > GameLogic.comboWindow {
+            multiplier = 1
+        }
+
+        // C2: start a trap when it is time, end it after half a second
+        if trapActive {
+            if now >= trapEndDate {
+                trapActive = false
+                nextTrapDate = now.addingTimeInterval(TimeInterval.random(in: GameLogic.trapGapRange))
+            }
+        } else if trapsEnabled,
+                  GameLogic.shouldStartTrap(now: now, nextTrap: nextTrapDate, roundEnd: endDate) {
+            trapActive = true
+            trapEndDate = now.addingTimeInterval(GameLogic.trapDuration)
+        }
+    }
+
+    private func finishRound() {
+        bestScore = GameLogic.updatedBest(currentBest: bestScore, score: score)
+        trapActive = false
+        multiplier = 1
+        phase = .over
+    }
+
+    private func playAgain() {
+        score = 0
+        timeLeft = GameLogic.duration
+        multiplier = 1
+        lastTapDate = nil
+        trapActive = false
+        phase = .idle
+    }
+}
+
+// MARK: - Small reusable views
+
+// The "Tap Frenzy" rounded header at the top
+struct TitlePill: View {
+    // Smaller height when the phone is turned sideways
+    var compact: Bool = false
+
+    var body: some View {
+        Text("Tap Frenzy")
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundColor(.black)
+            .frame(maxWidth: 357, minHeight: compact ? 44 : 64)
+            .background(Constants.pillGray)
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 4)
+    }
+}
+
+// Thin bar that starts full and shrinks from right to left as time runs out
+struct TimerBar: View {
+    // 1.0 = full bar, 0.0 = empty
+    let progress: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Constants.trackGray).frame(height: 4)
+                Capsule()
+                    .fill(Constants.accentsBlue)
+                    .frame(width: max(0, geo.size.width * progress), height: 4)
+            }
+            .frame(maxHeight: .infinity)
+        }
+        .padding(.horizontal, 6)
+        .accessibilityElement()
+        .accessibilityLabel("Time left")
+        .accessibilityValue("\(Int(progress * 100)) percent")
+        .accessibilityIdentifier("timerBar")
+    }
+}
+
+// Makes the big button shrink a little while pressed
+struct PressScaleStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+    }
+}
+
+#Preview("Game") {
+    ContentView()
+}
+</file>
+
+<file path="TapFrenzy/HomeView.swift">
+import SwiftUI
+
+struct HomeView: View {
+    var body: some View {
+        VStack(spacing: 32) {
+            // The app title
+            Text("Tap Frenzy")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundColor(.black)
+
+            // One big button per mode
+            modeButton(.LightUp)
+            modeButton(.trap)
+        }
+        .padding(24)
+        .frame(maxWidth: 400)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white.ignoresSafeArea())
+        // Home has no navigation bar. The game screens show one with a Back button.
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    // A NavigationLink that pushes the game screen for one mode.
+    // The label is the big blue button.
+    private func modeButton(_ mode: GameMode) -> some View {
+        NavigationLink {
+            GameView(mode: mode)
+            CardGridView(mode : mode)
+        } label: {
+            Text(mode.title)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, minHeight: 120)
+                .background(Constants.accentsBlue)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+        }
+        .accessibilityIdentifier(mode == .classic ? "classicModeButton" : "trapModeButton")
+    }
+}
+
+#Preview("Trap") {
+    NavigationStack {
+        GameView(mode: .trap)
+    }
+}
+</file>
+
+<file path="TapFrenzy/Level.swift">
+import Foundation
+
+enum Level: CaseIterable {
+    case l1, l2, l3, l4
+
+    // Label shown on screen
+    var title: String {
+        switch self {
+        case .l1: return "L1"
+        case .l2: return "L2"
+        case .l3: return "L3"
+        case .l4: return "L4"
+        }
+    }
+
+    // How many cards the grid has at this level
+    var gridCount: Int {
+        switch self {
+        case .l1: return 4
+        case .l2: return 9
+        case .l3: return 16
+        case .l4: return 25
+        }
+    }
+
+    // How long a lit card stays lit (seconds). Higher levels give less time.
+    var litWindow: TimeInterval {
+        switch self {
+        case .l1: return 0.8
+        case .l2: return 0.7
+        case .l3: return 0.6
+        case .l4: return 0.5
+        }
+    }
+
+    // The level for the time that has passed in the round.
+    // The 10 second round splits into four parts of 2.5 seconds each.
+    static func forElapsed(_ elapsed: TimeInterval) -> Level {
+        switch elapsed {
+        case ..<2.5: return .l1
+        case ..<5:   return .l2
+        case ..<7.5: return .l3
+        default:     return .l4
+        }
+    }
+}
+</file>
+
+<file path="TapFrenzy.xcodeproj/project.xcworkspace/contents.xcworkspacedata">
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "self:">
+   </FileRef>
+</Workspace>
+</file>
+
+<file path="TapFrenzy.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+</file>
+
+<file path="TapFrenzy.xcodeproj/xcshareddata/xcschemes/TapFrenzy.xcscheme">
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "2600"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+               BuildableName = "TapFrenzy.app"
+               BlueprintName = "TapFrenzy"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "7C6F3B06E869C373BAEBD9D2"
+               BuildableName = "TapFrenzyTests.xctest"
+               BlueprintName = "TapFrenzyTests"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "46AB4DE2F40C65282C82311C"
+               BuildableName = "TapFrenzyUITests.xctest"
+               BlueprintName = "TapFrenzyUITests"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+            BuildableName = "TapFrenzy.app"
+            BlueprintName = "TapFrenzy"
+            ReferencedContainer = "container:TapFrenzy.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+            BuildableName = "TapFrenzy.app"
+            BlueprintName = "TapFrenzy"
+            ReferencedContainer = "container:TapFrenzy.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>
+</file>
+
+<file path="TapFrenzy.xcodeproj/project.pbxproj">
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */; };
+		9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E549CDF39697F1AEA383E /* ContentView.swift */; };
+		4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */; };
+		3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08373860A73CDF7E3B19B73E /* GameLogicTests.swift */; };
+		A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FDA9C6BF294ECA1E1CE81390 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B61767D7DB558A1F1E497FF2;
+			remoteInfo = TapFrenzy;
+		};
+		8D4BA0B21411498221162BBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B61767D7DB558A1F1E497FF2;
+			remoteInfo = TapFrenzy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyApp.swift; sourceTree = "<group>"; };
+		371E549CDF39697F1AEA383E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogic.swift; sourceTree = "<group>"; };
+		08373860A73CDF7E3B19B73E /* GameLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogicTests.swift; sourceTree = "<group>"; };
+		24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyUITests.swift; sourceTree = "<group>"; };
+		40EA61766946C0CEBF0945B4 /* TapFrenzy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TapFrenzy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TapFrenzyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TapFrenzyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5168F33626E649A18A20278B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		77DF01E585690BF24CF9DAE6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1F836E26849E72D916E33D2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8D3FC6DB5D0827F168A73277 = {
+			isa = PBXGroup;
+			children = (
+				CE882751F8B3EE4485706ED4 /* TapFrenzy */,
+				24DFAD7E3B56719996E6F208 /* TapFrenzyTests */,
+				0F4A94EC4B20B287560995E2 /* TapFrenzyUITests */,
+				1BADDC1D73C1A20F347483E1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CE882751F8B3EE4485706ED4 /* TapFrenzy */ = {
+			isa = PBXGroup;
+			children = (
+				1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */,
+				371E549CDF39697F1AEA383E /* ContentView.swift */,
+				C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */,
+			);
+			path = TapFrenzy;
+			sourceTree = "<group>";
+		};
+		24DFAD7E3B56719996E6F208 /* TapFrenzyTests */ = {
+			isa = PBXGroup;
+			children = (
+				08373860A73CDF7E3B19B73E /* GameLogicTests.swift */,
+			);
+			path = TapFrenzyTests;
+			sourceTree = "<group>";
+		};
+		0F4A94EC4B20B287560995E2 /* TapFrenzyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */,
+			);
+			path = TapFrenzyUITests;
+			sourceTree = "<group>";
+		};
+		1BADDC1D73C1A20F347483E1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				40EA61766946C0CEBF0945B4 /* TapFrenzy.app */,
+				B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */,
+				380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B61767D7DB558A1F1E497FF2 /* TapFrenzy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94C86E687B7AD02A1B29F08B /* Build configuration list for PBXNativeTarget "TapFrenzy" */;
+			buildPhases = (
+				9089A1DE1DDF3122481EBABA /* Sources */,
+				5168F33626E649A18A20278B /* Frameworks */,
+				D0995FD86A7BBFADD891C911 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TapFrenzy;
+			productName = TapFrenzy;
+			productReference = 40EA61766946C0CEBF0945B4 /* TapFrenzy.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7C6F3B06E869C373BAEBD9D2 /* TapFrenzyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1F240FF616B2888C660C9A0B /* Build configuration list for PBXNativeTarget "TapFrenzyTests" */;
+			buildPhases = (
+				BA4CC1F9E017B2B4BCFFDC16 /* Sources */,
+				77DF01E585690BF24CF9DAE6 /* Frameworks */,
+				A177DD75A4CE1B7CA38FB9A3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF5E088CD095E238B596D42E /* PBXTargetDependency */,
+			);
+			name = TapFrenzyTests;
+			productName = TapFrenzyTests;
+			productReference = B5E1B14352B97D72F1BCC45F /* TapFrenzyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		46AB4DE2F40C65282C82311C /* TapFrenzyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 57B0216D6075BEFFF3C6C567 /* Build configuration list for PBXNativeTarget "TapFrenzyUITests" */;
+			buildPhases = (
+				1B82B9719B103E4D21565EF8 /* Sources */,
+				F1F836E26849E72D916E33D2 /* Frameworks */,
+				DE18445420C0B79162BA1E90 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				12910AB179B2FE4F90A1EDF7 /* PBXTargetDependency */,
+			);
+			name = TapFrenzyUITests;
+			productName = TapFrenzyUITests;
+			productReference = 380E82AAABEE3D73FDD91FAE /* TapFrenzyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					B61767D7DB558A1F1E497FF2 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					7C6F3B06E869C373BAEBD9D2 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = B61767D7DB558A1F1E497FF2;
+					};
+					46AB4DE2F40C65282C82311C = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = B61767D7DB558A1F1E497FF2;
+					};
+				};
+			};
+			buildConfigurationList = 5BF065D48D8C23D03623AA6A /* Build configuration list for PBXProject "TapFrenzy" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 8D3FC6DB5D0827F168A73277;
+			productRefGroup = 1BADDC1D73C1A20F347483E1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B61767D7DB558A1F1E497FF2 /* TapFrenzy */,
+				7C6F3B06E869C373BAEBD9D2 /* TapFrenzyTests */,
+				46AB4DE2F40C65282C82311C /* TapFrenzyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0995FD86A7BBFADD891C911 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A177DD75A4CE1B7CA38FB9A3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE18445420C0B79162BA1E90 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9089A1DE1DDF3122481EBABA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */,
+				9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */,
+				4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA4CC1F9E017B2B4BCFFDC16 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B82B9719B103E4D21565EF8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EF5E088CD095E238B596D42E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B61767D7DB558A1F1E497FF2 /* TapFrenzy */;
+			targetProxy = FDA9C6BF294ECA1E1CE81390 /* PBXContainerItemProxy */;
+		};
+		12910AB179B2FE4F90A1EDF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B61767D7DB558A1F1E497FF2 /* TapFrenzy */;
+			targetProxy = 8D4BA0B21411498221162BBB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		FA9139DD8B03E3F922556BF8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FFE2104CCFAB79205AC64460 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		26A712CC4B3E216C08BD361C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap Frenzy";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		35C94972FDBA5C18011EA62B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap Frenzy";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		33B060AB642862CE29034C04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapFrenzy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TapFrenzy";
+			};
+			name = Debug;
+		};
+		5EAE4030F9C42DA75847C0C5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TapFrenzy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TapFrenzy";
+			};
+			name = Release;
+		};
+		876BBD160AF3F89AD52DC1D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TapFrenzy;
+			};
+			name = Debug;
+		};
+		220A570CD29B816101040841 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TapFrenzyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = TapFrenzy;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5BF065D48D8C23D03623AA6A /* Build configuration list for PBXProject "TapFrenzy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA9139DD8B03E3F922556BF8 /* Debug */,
+				FFE2104CCFAB79205AC64460 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94C86E687B7AD02A1B29F08B /* Build configuration list for PBXNativeTarget "TapFrenzy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26A712CC4B3E216C08BD361C /* Debug */,
+				35C94972FDBA5C18011EA62B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1F240FF616B2888C660C9A0B /* Build configuration list for PBXNativeTarget "TapFrenzyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				33B060AB642862CE29034C04 /* Debug */,
+				5EAE4030F9C42DA75847C0C5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		57B0216D6075BEFFF3C6C567 /* Build configuration list for PBXNativeTarget "TapFrenzyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				876BBD160AF3F89AD52DC1D8 /* Debug */,
+				220A570CD29B816101040841 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}
+</file>
+
+<file path=".gitignore">
+## macOS
+.DS_Store
+
+## Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcresult
+</file>
+
+<file path="README.md">
+# Tap Frenzy
+
+A small SwiftUI game. Tap the big blue button as many times as you can in 10 seconds.
+
+- Phases: idle -> playing -> over
+- State: `@State` for the round, `@AppStorage` for the saved best score
+- Timer: `Timer.publish` (ticks every 0.05s, uses the real clock for accuracy)
+- Works in portrait and landscape
+
+## Extra features
+
+**C1 - Combo.** If two taps come within 300 ms, the multiplier goes up (x2!, x3!, x4!, x5!).
+Each tap then adds the multiplier to the score. A slower tap resets it to x1.
+The multiplier is shown in orange next to the score. It stops at x5.
+
+**C2 - Trap colour.** Every 1.5 to 3.5 seconds the button turns red for 0.5 seconds
+(the status text says "Trap! Don't tap!"). A tap during the trap takes 2 points away
+(the score never goes below 0) and resets the combo. A trap never starts if it
+could not finish before the round ends.
+
+## Folder structure
+
+    TapFrenzy/                      <- project root (open this folder)
+    ├── TapFrenzy.xcodeproj/        <- the Xcode project (double-click this)
+    ├── TapFrenzy/                  <- app source code
+    │   ├── TapFrenzyApp.swift
+    │   ├── ContentView.swift
+    │   └── GameLogic.swift
+    ├── TapFrenzyTests/
+    │   └── GameLogicTests.swift
+    ├── TapFrenzyUITests/
+    │   └── TapFrenzyUITests.swift
+    └── .github/workflows/ios-ci.yml
+
+| File | What it does |
+|---|---|
+| `TapFrenzy/TapFrenzyApp.swift` | App entry point |
+| `TapFrenzy/ContentView.swift` | Both screens, the layouts and the game actions |
+| `TapFrenzy/GameLogic.swift` | Phases, round length, combo and trap rules, small pure functions |
+| `TapFrenzyTests/GameLogicTests.swift` | Unit tests for the pure functions |
+| `TapFrenzyUITests/TapFrenzyUITests.swift` | UI tests: full round, rotation, saved best score |
+
+## Run in Xcode
+
+1. Double-click `TapFrenzy.xcodeproj`.
+2. At the top of Xcode pick the scheme `TapFrenzy` and an iPhone simulator.
+3. Press `Cmd + R`.
+
+Minimum iOS version is 16.0, so any simulator from 16.0 up works (including 17.5).
+
+## Test checklist (by hand)
+
+- **Saved best score:** play a round, then force-quit the simulator app
+  (`Cmd + Shift + H` twice, swipe the app up), open it again, play a round.
+  "Best" must still show your old best score.
+- **Fast tapping:** tap as fast as you can. Every tap must count.
+- **Rotate:** Device -> Rotate Left / Rotate Right (`Cmd + Left/Right`). Everything must stay on screen.
+- **Combo:** tap fast, "x2!" and up appears next to the score. Stop for a moment, it disappears.
+- **Trap:** when the button turns red, tap it. The score must drop by 2.
+
+The same checks for saved score and rotation also run as UI tests.
+The UI tests start the app with `--ui-testing`, which turns off the random trap
+and the combo so the taps can be counted exactly.
+
+## CI
+
+See `.github/workflows/ios-ci.yml`. It builds from the committed `TapFrenzy.xcodeproj`.
+</file>
+
+<file path="TapFrenzy/TapFrenzyApp.swift">
+import SwiftUI
+@main
+struct TapFrenzyApp: App {
+    init() {
+        // UI tests pass "--reset" so every test run starts with no saved best scores
+        if CommandLine.arguments.contains("--reset") {
+            UserDefaults.standard.removeObject(forKey: GameMode.classic.bestScoreKey)
+            UserDefaults.standard.removeObject(forKey: GameMode.trap.bestScoreKey)
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            // The stack starts on Home. Pushed screens get a Back button automatically.
+            NavigationStack {
+                HomeView()
+            }
+        }
+    }
+}
+</file>
+
+<file path=".github/workflows/ios-ci.yml">
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # publish small media to the ci-artifacts branch
+
+concurrency:
+  group: ios-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  HOMEBREW_NO_ANALYTICS: 1
+
+jobs:
+  ui-test:
+    # Runs only when you start it by hand (Actions tab or `gh workflow run`)
+    # or when the commit message contains [ci]. Other pushes skip it instantly.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ci]')
+    runs-on: macos-26
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Start booting the simulator FIRST. `simctl boot` returns quickly and the boot
+      # carries on in the background while the app compiles.
+      - name: Pick an iPhone simulator and start booting it
+        run: |
+          UDID=$(xcrun simctl list devices available -j | jq -r '
+            .devices | to_entries
+            | map(select(.key | contains("iOS")))
+            | sort_by(.key) | last
+            | .value | map(select(.name | startswith("iPhone"))) | first | .udid')
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then
+            echo "No iPhone simulator found"; xcrun simctl list devices available; exit 1
+          fi
+          echo "Using simulator $UDID"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID" || true
+
+      - name: Cache Homebrew downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: brew-${{ runner.os }}-ffmpeg-v1
+
+      # The Xcode project (TapFrenzy.xcodeproj) is committed to the repo,
+      # so no project generator is needed here.
+
+      # Compile the app and the tests (no simulator needed yet).
+      # ffmpeg installs in parallel, because it is only needed after the test.
+      - name: Build the app and tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          ( command -v ffmpeg >/dev/null || brew install ffmpeg ) > ffmpeg-install.log 2>&1 &
+          FFMPEG_PID=$!
+
+          xcodebuild build-for-testing \
+            -project TapFrenzy.xcodeproj \
+            -scheme TapFrenzy \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build \
+            COMPILER_INDEX_STORE_ENABLE=NO 2>&1 | tee build.log
+          BUILD_STATUS=${PIPESTATUS[0]}
+
+          wait "$FFMPEG_PID" || echo "ffmpeg install failed - see ffmpeg-install.log"
+          exit "$BUILD_STATUS"
+
+      - name: Wait for the simulator to finish booting
+        run: xcrun simctl bootstatus "$UDID" -b
+
+      # The recording now covers only the test run, not the build.
+      # -only-testing:TapFrenzyUITests runs only the UI test bundle.
+      - name: Run UI tests while recording the screen
+        shell: bash
+        run: |
+          set -uo pipefail
+          xcrun simctl io "$UDID" recordVideo --codec=h264 recording.mov &
+          REC_PID=$!
+          sleep 1
+
+          xcodebuild test-without-building \
+            -project TapFrenzy.xcodeproj \
+            -scheme TapFrenzy \
+            -only-testing:TapFrenzyUITests \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build \
+            -parallel-testing-enabled NO \
+            -resultBundlePath TestResults.xcresult 2>&1 | tee xcodebuild.log
+          TEST_STATUS=${PIPESTATUS[0]}
+
+          # Give the recorder time to write the end of the file before stopping it
+          sleep 3
+          kill -SIGINT "$REC_PID" || true
+          wait "$REC_PID" || true
+          ls -l recording.mov || echo "No recording file was created"
+          exit "$TEST_STATUS"
+
+      # MP4 for a full-quality link, plus a small GIF that shows inline in the summary.
+      # If ffmpeg is missing, the raw .mov is published instead.
+      - name: Compress the recording
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p media
+          if [ -f recording.mov ] && command -v ffmpeg >/dev/null; then
+            ffmpeg -y -loglevel error -i recording.mov \
+              -vf "scale=-2:900,fps=15" \
+              -c:v libx264 -crf 30 -preset veryfast -pix_fmt yuv420p \
+              -movflags +faststart -an media/recording.mp4
+            ffmpeg -y -loglevel error -i recording.mov \
+              -vf "fps=8,scale=360:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+              -loop 0 media/recording.gif
+          elif [ -f recording.mov ]; then
+            cp recording.mov media/recording.mov
+          fi
+          ls -lh media || true
+
+      - name: Collect and shrink screenshots
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p media
+          xcrun simctl io "$UDID" screenshot final-screen.png || true
+          if [ -f final-screen.png ]; then
+            sips -Z 1000 -s format jpeg -s formatOptions 70 final-screen.png --out media/final-screen.jpg >/dev/null
+          fi
+          xcrun xcresulttool export attachments --path TestResults.xcresult --output-path test-screenshots || true
+          if [ -f test-screenshots/manifest.json ]; then
+            jq -r '.[].attachments[]? | select(.exportedFileName and .suggestedHumanReadableName)
+                   | "\(.exportedFileName)\t\(.suggestedHumanReadableName)"' test-screenshots/manifest.json |
+            while IFS=$'\t' read -r file label; do
+              name=$(echo "$label" | sed -E 's/_[0-9]+_[0-9A-F-]+\.png$//; s/\.png$//')
+              sips -Z 1000 -s format jpeg -s formatOptions 70 "test-screenshots/$file" --out "media/$name.jpg" >/dev/null || true
+            done
+          fi
+          ls -lh media || true
+
+      - name: Publish media to the ci-artifacts branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(ls -A media 2>/dev/null)" ]; then
+            echo "No media to publish"; exit 0
+          fi
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          PUB="$RUNNER_TEMP/pub"
+          rm -rf "$PUB" && mkdir -p "$PUB/latest"
+          cp media/* "$PUB/latest/"
+          echo "Run $GITHUB_RUN_NUMBER, commit ${GITHUB_SHA}" > "$PUB/latest/RUN.txt"
+          cd "$PUB"
+          git init -q -b ci-artifacts
+          git remote add origin "$REPO_URL"
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "CI media for run $GITHUB_RUN_NUMBER"
+          git push -q -f origin ci-artifacts
+
+      - name: Write links to the run summary
+        if: always()
+        env:
+          BASE: https://github.com/${{ github.repository }}
+        run: |
+          {
+            echo "## iOS UI test results"
+            echo ""
+            if [ -f media/recording.gif ]; then
+              echo "![recording]($BASE/raw/ci-artifacts/latest/recording.gif)"
+              echo ""
+            fi
+            for v in recording.mp4 recording.mov; do
+              if [ -f "media/$v" ]; then
+                echo "Full video: [$v]($BASE/blob/ci-artifacts/latest/$v)"
+                echo ""
+              fi
+            done
+            echo "### Screenshots"
+            for img in media/*.jpg; do
+              [ -f "$img" ] || continue
+              name=$(basename "$img")
+              echo "![$name]($BASE/raw/ci-artifacts/latest/$name)"
+              echo ""
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Small text logs only. Look here for the per-step timings ("t = 12.3s ...").
+      - name: Upload build and test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            build.log
+            xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      # Zip the simulator app so it can be uploaded to Appetize
+      - name: Package simulator app for Appetize
+        if: always()
+        run: |
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "TapFrenzy.app" -type d)
+          if [ -z "$APP" ]; then echo "No simulator app found"; exit 0; fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP" TapFrenzy-simulator.zip
+          ls -lh TapFrenzy-simulator.zip
+
+      - name: Upload simulator app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapFrenzy-simulator-app
+          path: TapFrenzy-simulator.zip
+          if-no-files-found: warn
+          retention-days: 7
+</file>
+
+<file path="TapFrenzy/GameLogic.swift">
+import Foundation
+
+// The three phases of the game: waiting for the first tap, the 10 second round, and the result screen.
+enum GamePhase {
+    case idle
+    case playing
+    case over
+}
+
+// Launch arguments used by the UI tests.
+enum LaunchFlags {
+    // "--ui-testing" turns off the random trap and the combo,
+    // so the UI test can count taps exactly.
+    static let uiTesting = CommandLine.arguments.contains("--ui-testing")
+}
+
+// Game settings and the small pure functions behind the UI.
+// They live outside the view so they can be unit tested.
+enum GameLogic {
+    // Round length in seconds
+    static let duration: TimeInterval = 10
+
+    // MARK: Combo (C1)
+
+    // Two taps closer together than this (in seconds) build a combo.
+    static let comboWindow: TimeInterval = 0.3
+    // The multiplier never goes above this (x5), so the score stays fair.
+    static let maxMultiplier = 5
+
+    // The multiplier for the next tap.
+    // - no previous tap, or the gap is longer than 300 ms -> back to x1
+    // - gap is 300 ms or less -> one step higher, up to maxMultiplier
+    static func nextMultiplier(current: Int, secondsSinceLastTap: TimeInterval?) -> Int {
+        guard let gap = secondsSinceLastTap, gap <= comboWindow else { return 1 }
+        return min(current + 1, maxMultiplier)
+    }
+
+    // MARK: Trap colour (C2)
+
+    // How long the button stays red (seconds)
+    static let trapDuration: TimeInterval = 0.5
+    // Random wait between traps (seconds)
+    static let trapGapRange: ClosedRange<TimeInterval> = 1.5...3.5
+    // Points lost when you tap during a trap
+    static let trapPenalty = 2
+
+    // Score after a tap during a trap. It never goes below 0.
+    static func scoreAfterTrapTap(score: Int) -> Int {
+        max(0, score - trapPenalty)
+    }
+
+    // A trap starts when its time has come, but only if it can finish before the round ends.
+    static func shouldStartTrap(now: Date, nextTrap: Date, roundEnd: Date) -> Bool {
+        now >= nextTrap && roundEnd.timeIntervalSince(now) > trapDuration
+    }
+
+    // MARK: Timer bar, best score, status text
+
+    // How much of the round is left, from 1.0 (full bar at the start) to 0.0 (time is up).
+    // The bar shrinks as the round runs out. Values are clamped to 0...1.
+    static func remainingFraction(timeLeft: TimeInterval, duration: TimeInterval = GameLogic.duration) -> Double {
+        guard duration > 0 else { return 0 }
+        let fraction = timeLeft / duration
+        return min(max(fraction, 0), 1)
+    }
+
+    // The best score after a finished round: keep the higher of the two.
+    static func updatedBest(currentBest: Int, score: Int) -> Int {
+        max(currentBest, score)
+    }
+
+    // Text shown above the tap button depending on the phase.
+    static func statusText(phase: GamePhase, timeLeft: TimeInterval, trapActive: Bool = false) -> String {
+        switch phase {
+        case .idle:
+            return "Tap to start"
+        case .playing:
+            if trapActive { return "Trap! Don't tap!" }
+            return String(format: "%.1fs left", max(timeLeft, 0))
+        case .over:
+            return "Times up!"
+        }
+    }
+}
+
+// The two game modes. Each one is a screen of its own.
+enum GameMode {
+    case LightUp
+    case trap
+
+    // Text on the Home buttons
+    var title: String {
+        switch self {
+        case .LightUp: return "LightUp"
+        case .trap: return "Tap Frenzy"
+        }
+    }
+
+    // Only Trap mode turns the red trap on
+    var hasTraps: Bool {
+        switch self {
+        case .LightUp: return false
+        case .trap: return true
+        }
+    }
+
+    // Each mode keeps its own best score
+    var bestScoreKey: String {
+        switch self {
+        case .LightUp: return "bestScore.LightUp"
+        case .trap: return "bestScore.trap"
+        }
+    }
+}
+</file>
+
+<file path="TapFrenzyTests/GameLogicTests.swift">
+import XCTest
+@testable import TapFrenzy
+
+final class GameLogicTests: XCTestCase {
+
+    // MARK: Timer bar
+
+    func testBarIsFullAtStart() {
+        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 10), 1, accuracy: 0.0001)
+    }
+
+    func testBarIsHalfwayAtFiveSeconds() {
+        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 5), 0.5, accuracy: 0.0001)
+    }
+
+    func testBarIsEmptyWhenTimeIsUp() {
+        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 0), 0, accuracy: 0.0001)
+    }
+
+    func testBarShrinksAsTimeRuns() {
+        let earlier = GameLogic.remainingFraction(timeLeft: 7)
+        let later = GameLogic.remainingFraction(timeLeft: 3)
+        XCTAssertLessThan(later, earlier)
+    }
+
+    func testBarIsClamped() {
+        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 15), 1, accuracy: 0.0001)
+        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: -3), 0, accuracy: 0.0001)
+    }
+
+    // MARK: Best score
+
+    func testBestScoreKeepsHigherValue() {
+        XCTAssertEqual(GameLogic.updatedBest(currentBest: 40, score: 12), 40)
+        XCTAssertEqual(GameLogic.updatedBest(currentBest: 40, score: 55), 55)
+        XCTAssertEqual(GameLogic.updatedBest(currentBest: 0, score: 0), 0)
+    }
+
+    // MARK: Status text
+
+    func testStatusText() {
+        XCTAssertEqual(GameLogic.statusText(phase: .idle, timeLeft: 10), "Tap to start")
+        XCTAssertEqual(GameLogic.statusText(phase: .playing, timeLeft: 7.25), "7.2s left")
+        XCTAssertEqual(GameLogic.statusText(phase: .over, timeLeft: 0), "Times up!")
+    }
+
+    func testStatusTextDuringTrap() {
+        XCTAssertEqual(GameLogic.statusText(phase: .playing, timeLeft: 5, trapActive: true), "Trap! Don't tap!")
+        // The trap text only shows while playing
+        XCTAssertEqual(GameLogic.statusText(phase: .idle, timeLeft: 10, trapActive: true), "Tap to start")
+    }
+
+    // MARK: Combo (C1)
+
+    func testFirstTapHasNoCombo() {
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: nil), 1)
+    }
+
+    func testFastTapRaisesMultiplier() {
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: 0.2), 2)
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 2, secondsSinceLastTap: 0.1), 3)
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 3, secondsSinceLastTap: 0.25), 4)
+    }
+
+    func testTapExactlyAtWindowStillCounts() {
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: 0.3), 2)
+    }
+
+    func testSlowTapResetsMultiplier() {
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 4, secondsSinceLastTap: 0.31), 1)
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 2, secondsSinceLastTap: 2.0), 1)
+    }
+
+    func testMultiplierIsCapped() {
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 4, secondsSinceLastTap: 0.1), 5)
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 5, secondsSinceLastTap: 0.1), 5)
+        XCTAssertEqual(GameLogic.nextMultiplier(current: 5, secondsSinceLastTap: 0.1), GameLogic.maxMultiplier)
+    }
+
+    // MARK: Trap colour (C2)
+
+    func testTrapTapDeductsPoints() {
+        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 10), 10 - GameLogic.trapPenalty)
+    }
+
+    func testTrapTapNeverGoesBelowZero() {
+        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 1), 0)
+        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 0), 0)
+    }
+
+    func testTrapStartsWhenItsTimeHasCome() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let roundEnd = now.addingTimeInterval(5)
+        XCTAssertTrue(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(-1), roundEnd: roundEnd))
+        XCTAssertTrue(GameLogic.shouldStartTrap(now: now, nextTrap: now, roundEnd: roundEnd))
+    }
+
+    func testTrapDoesNotStartTooEarly() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let roundEnd = now.addingTimeInterval(5)
+        XCTAssertFalse(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(1), roundEnd: roundEnd))
+    }
+
+    func testTrapDoesNotStartIfRoundEndsFirst() {
+        let now = Date(timeIntervalSince1970: 1000)
+        // Only 0.3s left, but a trap lasts 0.5s
+        let roundEnd = now.addingTimeInterval(0.3)
+        XCTAssertFalse(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(-1), roundEnd: roundEnd))
+    }
+
+    func testTrapSettingsMatchTheBrief() {
+        XCTAssertEqual(GameLogic.trapDuration, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(GameLogic.comboWindow, 0.3, accuracy: 0.0001)
+    }
+}
+</file>
+
+<file path="TapFrenzyUITests/TapFrenzyUITests.swift">
+import XCTest
+
+final class TapFrenzyUITests: XCTestCase {
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+    }
+
+    override func tearDownWithError() throws {
+        // Leave the simulator upright for the next test
+        XCUIDevice.shared.orientation = .portrait
+    }
+
+    // Plays one full round: start, tap 5 times, check the bar shrinks, wait for the time to run out, check the result.
+    func testFullRound() throws {
+        let app = XCUIApplication()
+        // "--reset" clears the saved best score.
+        // "--ui-testing" turns off the random trap and the combo so the taps can be counted exactly.
+        app.launchArguments = ["--reset", "--ui-testing"]
+        app.launch()
+
+        // Start screen
+        let tapButton = app.buttons["tapButton"]
+        XCTAssertTrue(tapButton.waitForExistence(timeout: 5), "Tap button should be on screen")
+        XCTAssertTrue(app.staticTexts["Tap to start"].exists)
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "0")
+        XCTAssertEqual(percent(of: timerBar(app)), 100, "Bar should be full at the start")
+        attach(app, name: "01-start")
+
+        // 5 taps. The first one also starts the 10 second timer.
+        for _ in 1...5 {
+            tapButton.tap()
+        }
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "5")
+
+        // The bar should shrink while the round runs
+        let before = percent(of: timerBar(app))
+        sleep(2)
+        let after = percent(of: timerBar(app))
+        XCTAssertLessThan(after, before, "Bar should shrink as time runs out")
+        XCTAssertLessThan(after, 100, "Bar should not be full during the round")
+        attach(app, name: "02-playing")
+
+        // Wait for the round to end (10s timer, 20s timeout to be safe)
+        let finalScore = app.staticTexts["finalScore"]
+        XCTAssertTrue(finalScore.waitForExistence(timeout: 20), "Result screen should appear")
+        XCTAssertTrue(app.staticTexts["Times up!"].exists)
+        XCTAssertEqual(finalScore.label, "5")
+        XCTAssertEqual(app.staticTexts["bestScore"].label, "Best: 5")
+        attach(app, name: "03-result")
+
+        // Play again goes back to the start screen
+        app.buttons["playAgainButton"].tap()
+        XCTAssertTrue(app.buttons["tapButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Tap to start"].exists)
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "0")
+        attach(app, name: "04-play-again")
+    }
+
+    // The layout must still work when the phone is turned sideways.
+    func testLayoutWorksWhenRotated() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--reset", "--ui-testing"]
+        app.launch()
+
+        XCUIDevice.shared.orientation = .landscapeLeft
+        sleep(1)   // let the rotation finish
+
+        let tapButton = app.buttons["tapButton"]
+        XCTAssertTrue(tapButton.waitForExistence(timeout: 5), "Tap button should exist in landscape")
+        XCTAssertTrue(tapButton.isHittable, "Tap button should be fully on screen in landscape")
+        attach(app, name: "05-landscape")
+
+        tapButton.tap()
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "1")
+
+        // Back to portrait: the round keeps going and the score is kept
+        XCUIDevice.shared.orientation = .portrait
+        sleep(1)
+        XCTAssertTrue(app.buttons["tapButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tapButton"].isHittable)
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "1")
+    }
+
+    // The best score must be saved on the device (same as force-quitting the app by hand).
+    func testBestScoreSurvivesRestart() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--reset", "--ui-testing"]
+        app.launch()
+
+        // Round 1: score 3
+        let tapButton = app.buttons["tapButton"]
+        XCTAssertTrue(tapButton.waitForExistence(timeout: 5))
+        for _ in 1...3 {
+            tapButton.tap()
+        }
+        XCTAssertTrue(app.staticTexts["finalScore"].waitForExistence(timeout: 20))
+        XCTAssertEqual(app.staticTexts["bestScore"].label, "Best: 3")
+
+        // Close the app completely, then start it again WITHOUT "--reset"
+        app.terminate()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        // Round 2: score 1. The best score must still be 3.
+        XCTAssertTrue(app.buttons["tapButton"].waitForExistence(timeout: 5))
+        app.buttons["tapButton"].tap()
+        XCTAssertTrue(app.staticTexts["finalScore"].waitForExistence(timeout: 20))
+        XCTAssertEqual(app.staticTexts["finalScore"].label, "1")
+        XCTAssertEqual(app.staticTexts["bestScore"].label, "Best: 3")
+    }
+
+    // Finds the timer bar. A fresh query each time, so the value is current.
+    private func timerBar(_ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)["timerBar"]
+    }
+
+    // Reads "73 percent" as 73
+    private func percent(of element: XCUIElement) -> Int {
+        let text = element.value as? String ?? ""
+        return Int(text.replacingOccurrences(of: " percent", with: "")) ?? -1
+    }
+
+    // Saves a screenshot into the test results (your CI turns these into images)
+    private func attach(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}
+</file>
+
+</files>
