@@ -1,6 +1,6 @@
 import Foundation
 
-// The three phases of the game: waiting for the first tap, the 10 second round, and the result screen.
+// The three phases of a round: waiting for the start, playing, and the result screen.
 enum GamePhase {
     case idle
     case playing
@@ -9,15 +9,15 @@ enum GamePhase {
 
 // Launch arguments used by the UI tests.
 enum LaunchFlags {
-    // "--ui-testing" turns off the random trap and the combo,
-    // so the UI test can count taps exactly.
+    // "--ui-testing" turns off the random trap and the combo in Tap Frenzy,
+    // and makes Light It Up slower, so the UI tests can count exactly.
     static let uiTesting = CommandLine.arguments.contains("--ui-testing")
 }
 
 // Game settings and the small pure functions behind the UI.
 // They live outside the view so they can be unit tested.
 enum GameLogic {
-    // Round length in seconds
+    // Tap Frenzy round length in seconds
     static let duration: TimeInterval = 10
 
     // MARK: Combo (C1)
@@ -57,7 +57,7 @@ enum GameLogic {
     // MARK: Timer bar, best score, status text
 
     // How much of the round is left, from 1.0 (full bar at the start) to 0.0 (time is up).
-    // The bar shrinks as the round runs out. Values are clamped to 0...1.
+    // Values are clamped to 0...1.
     static func remainingFraction(timeLeft: TimeInterval, duration: TimeInterval = GameLogic.duration) -> Double {
         guard duration > 0 else { return 0 }
         let fraction = timeLeft / duration
@@ -80,5 +80,88 @@ enum GameLogic {
         case .over:
             return "Times up!"
         }
+    }
+}
+
+// MARK: - Game modes
+
+// The two modes on the Home screen
+enum GameMode: CaseIterable {
+    case tapFrenzy
+    case lightItUp
+
+    var title: String {
+        switch self {
+        case .tapFrenzy: return "Tap Frenzy"
+        case .lightItUp: return "Light It Up"
+        }
+    }
+
+    // Each mode keeps its own best score
+    var bestScoreKey: String {
+        switch self {
+        case .tapFrenzy: return "bestScore.tapFrenzy"
+        case .lightItUp: return "bestScore.lightItUp"
+        }
+    }
+}
+
+// MARK: - Settings
+
+// Round length choices for Light It Up (Settings sheet)
+enum RoundLength: Int, CaseIterable, Identifiable {
+    case short = 30
+    case normal = 60
+    case long = 90
+
+    // Key used with @AppStorage
+    static let storageKey = "roundLength"
+
+    var id: Int { rawValue }
+    var seconds: TimeInterval { TimeInterval(rawValue) }
+    var title: String { "\(rawValue)s" }
+
+    // Turns the saved number back into a choice. Anything unknown becomes 60s.
+    static func from(stored: Int) -> RoundLength {
+        RoundLength(rawValue: stored) ?? .normal
+    }
+}
+
+// MARK: - Light It Up rules
+
+enum LightItUpLogic {
+    static let maxLives = 3
+
+    // A new light comes every 1 to 2 seconds
+    static let gapRange: ClosedRange<TimeInterval> = 1.0...2.0
+    // The card stays dark at least this long before the next light
+    static let restGap: TimeInterval = 0.25
+    // Chance of two lit cards at once on the last level
+    static let doubleLightChance = 0.5
+
+    // The UI tests wait longer for the first light and keep lit cards lit 3x longer
+    static var firstLightDelay: TimeInterval { LaunchFlags.uiTesting ? 2.5 : 0.8 }
+    static var windowScale: Double { LaunchFlags.uiTesting ? 3 : 1 }
+
+    // Time until the next light. On the first levels the lit window (1.5s, 1.2s)
+    // is longer than the shortest gap (1s), so the gap is stretched to keep
+    // only one card lit at a time.
+    static func nextGap(level: Level, randomGap: TimeInterval, windowScale: Double = 1) -> TimeInterval {
+        max(randomGap, level.litWindow * windowScale + restGap)
+    }
+
+    // How many cards light up now. roll is a random number from 0 to 1.
+    static func litCount(for level: Level, roll: Double) -> Int {
+        guard level.allowsDoubleLight else { return 1 }
+        return roll < doubleLightChance ? 2 : 1
+    }
+
+    // A wrong tap or a missed card costs one life
+    static func livesAfterMistake(_ lives: Int) -> Int {
+        max(0, lives - 1)
+    }
+
+    static func isOutOfLives(_ lives: Int) -> Bool {
+        lives <= 0
     }
 }
