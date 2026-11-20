@@ -8,7 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */; };
-		9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E549CDF39697F1AEA383E /* ContentView.swift */; };
+		6D2F8B41EA5C7031F9A82B01 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A01 /* Card.swift */; };
+		6D2F8B41EA5C7031F9A82B02 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A02 /* CardView.swift */; };
+		6D2F8B41EA5C7031F9A82B03 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A03 /* GameView.swift */; };
+		6D2F8B41EA5C7031F9A82B04 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A04 /* HomeView.swift */; };
+		6D2F8B41EA5C7031F9A82B05 /* Level.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A05 /* Level.swift */; };
+		6D2F8B41EA5C7031F9A82B06 /* LightItUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */; };
+		6D2F8B41EA5C7031F9A82B07 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */; };
+		6D2F8B41EA5C7031F9A82B08 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A08 /* Theme.swift */; };
 		4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */; };
 		3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08373860A73CDF7E3B19B73E /* GameLogicTests.swift */; };
 		A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */; };
@@ -33,7 +40,14 @@
 
 /* Begin PBXFileReference section */
 		1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyApp.swift; sourceTree = "<group>"; };
-		371E549CDF39697F1AEA383E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A01 /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A02 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A03 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A04 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A05 /* Level.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Level.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightItUpView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A08 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogic.swift; sourceTree = "<group>"; };
 		08373860A73CDF7E3B19B73E /* GameLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogicTests.swift; sourceTree = "<group>"; };
 		24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyUITests.swift; sourceTree = "<group>"; };
@@ -81,7 +95,14 @@
 			isa = PBXGroup;
 			children = (
 				1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */,
-				371E549CDF39697F1AEA383E /* ContentView.swift */,
+				5C1E7A30D94B6F2208E71A01 /* Card.swift */,
+				5C1E7A30D94B6F2208E71A02 /* CardView.swift */,
+				5C1E7A30D94B6F2208E71A03 /* GameView.swift */,
+				5C1E7A30D94B6F2208E71A04 /* HomeView.swift */,
+				5C1E7A30D94B6F2208E71A05 /* Level.swift */,
+				5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */,
+				5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */,
+				5C1E7A30D94B6F2208E71A08 /* Theme.swift */,
 				C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */,
 			);
 			path = TapFrenzy;
@@ -242,7 +263,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */,
-				9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B01 /* Card.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B02 /* CardView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B03 /* GameView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B04 /* HomeView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B05 /* Level.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B06 /* LightItUpView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B07 /* SettingsView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B08 /* Theme.swift in Sources */,
 				4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
