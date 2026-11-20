@@ -54,7 +54,10 @@ TapFrenzy/GameLogic.swift
 TapFrenzy/GameView.swift
 TapFrenzy/HomeView.swift
 TapFrenzy/Level.swift
+TapFrenzy/LightItUpView.swift
+TapFrenzy/SettingsView.swift
 TapFrenzy/TapFrenzyApp.swift
+TapFrenzy/Theme.swift
 TapFrenzyTests/GameLogicTests.swift
 TapFrenzyUITests/TapFrenzyUITests.swift
 </directory_structure>
@@ -62,12 +65,143 @@ TapFrenzyUITests/TapFrenzyUITests.swift
 <files>
 This section contains the contents of the repository's files.
 
+<file path="TapFrenzy.xcodeproj/project.xcworkspace/contents.xcworkspacedata">
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "self:">
+   </FileRef>
+</Workspace>
+</file>
+
+<file path="TapFrenzy.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+</file>
+
+<file path="TapFrenzy.xcodeproj/xcshareddata/xcschemes/TapFrenzy.xcscheme">
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "2600"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+               BuildableName = "TapFrenzy.app"
+               BlueprintName = "TapFrenzy"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "7C6F3B06E869C373BAEBD9D2"
+               BuildableName = "TapFrenzyTests.xctest"
+               BlueprintName = "TapFrenzyTests"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "46AB4DE2F40C65282C82311C"
+               BuildableName = "TapFrenzyUITests.xctest"
+               BlueprintName = "TapFrenzyUITests"
+               ReferencedContainer = "container:TapFrenzy.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+            BuildableName = "TapFrenzy.app"
+            BlueprintName = "TapFrenzy"
+            ReferencedContainer = "container:TapFrenzy.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
+            BuildableName = "TapFrenzy.app"
+            BlueprintName = "TapFrenzy"
+            ReferencedContainer = "container:TapFrenzy.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>
+</file>
+
 <file path="TapFrenzy/Card.swift">
 import Foundation
 
 struct Card: Identifiable {
-    let id: Int      // unique number for each card, used by ForEach
-    var isLit: Bool  // true = lit up, false = off
+    let id: Int
+    var isLit: Bool
+    // When the lit card goes dark by itself. nil while the card is off.
+    var expiresAt: Date? = nil
+
+    // A fresh board of dark cards
+    static func makeCards(count: Int) -> [Card] {
+        (0..<count).map { Card(id: $0, isLit: false) }
+    }
 }
 </file>
 
@@ -209,58 +343,81 @@ enum FeedbackKind {
 
 struct CardView: View {
     let card: Card
+    // Glow colour of the current level
+    var glow: Color = Constants.neonCyan
     // nil when the card isn't flashing
     var flash: FeedbackKind? = nil
-    // Runs when the card is tapped. The parent decides what happens.
     let onTap: () -> Void
 
-    // Flash colour wins over the normal lit and unlit colours
-    private var fillColor: Color {
+    private var isGlowing: Bool { card.isLit || flash != nil }
+
+    // A flash colour wins over the normal lit and dark colours
+    private var colors: [Color] {
         switch flash {
-        case .correct: return .green
+        case .correct:
+            return [Constants.correctGreen, Constants.correctGreen.opacity(0.65)]
+        case .wrong:
+            return [Constants.trapRed, Constants.trapRed.opacity(0.65)]
+        case nil:
+            if card.isLit { return [glow, glow.opacity(0.7)] }
+            return [Color.white.opacity(0.10), Color.white.opacity(0.04)]
+        }
+    }
+
+    private var glowColor: Color {
+        switch flash {
+        case .correct: return Constants.correctGreen
         case .wrong: return Constants.trapRed
-        case nil: return card.isLit ? Constants.accentsBlue : Constants.trackGray
+        case nil: return card.isLit ? glow : Color.clear
         }
     }
 
     var body: some View {
         Button(action: onTap) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(fillColor)
-                .aspectRatio(1, contentMode: .fit)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(Color.white.opacity(isGlowing ? 0.85 : 0.15),
+                                      lineWidth: card.isLit ? 3 : 1.5)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                // Lit cards grow a little and glow
                 .scaleEffect(card.isLit ? 1.08 : 1)
-                .animation(.easeInOut, value: card.isLit)
+                .shadow(color: glowColor.opacity(0.85), radius: isGlowing ? 22 : 0)
+                .animation(.easeInOut(duration: 0.2), value: card.isLit)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("card\(card.id)")
+        .accessibilityValue(card.isLit ? "lit" : "off")
     }
 }
 
 #Preview {
-    CardView(card: Card(id: 0, isLit: true), onTap: {})
+    ZStack {
+        GameBackground()
+        HStack(spacing: 16) {
+            CardView(card: Card(id: 0, isLit: true), glow: Level.l2.glow, onTap: {})
+                .frame(width: 100, height: 100)
+            CardView(card: Card(id: 1, isLit: false), onTap: {})
+                .frame(width: 100, height: 100)
+        }
+    }
 }
 </file>
 
 <file path="TapFrenzy/GameView.swift">
 import SwiftUI
 
-// Colors taken from the Figma design, plus two for the new features
-enum Constants {
-    static let accentsBlue = Color(red: 0, green: 0.53, blue: 1)
-    static let trackGray = Color(white: 0.9)
-    static let pillGray = Color(white: 0.96)
-    static let trapRed = Color(red: 1, green: 0.23, blue: 0.19)
-    static let comboOrange = Color(red: 1, green: 0.58, blue: 0)
-}
-
+// Tap Frenzy (Tutorial 1): same rules, new arcade look.
+// C1 combo: fast taps raise the multiplier. C2 trap: a red button costs points.
 struct GameView: View {
-    // The mode is passed in from the Home screen
-    let mode: GameMode
-
     // Game state
     @State private var phase: GamePhase = .idle
     @State private var score = 0
     @State private var timeLeft: TimeInterval = GameLogic.duration
     @State private var endDate = Date()
+    @State private var isNewBest = false
 
     // Combo state (C1)
     @State private var multiplier = 1
@@ -271,55 +428,62 @@ struct GameView: View {
     @State private var trapEndDate = Date()
     @State private var nextTrapDate = Date()
 
-    // Best score is saved per mode, so Classic and Trap keep separate records.
-    // The key can't be set in the normal way, so it is set in init below.
-    @AppStorage private var bestScore: Int
+    // Best score of this mode, saved on the device
+    @AppStorage(GameMode.tapFrenzy.bestScoreKey) private var bestScore = 0
 
-    // Traps only exist in Trap mode. The UI test turns them off too.
-    private var trapsEnabled: Bool { mode.hasTraps && !LaunchFlags.uiTesting }
+    // The UI tests turn the random trap and the combo off so they can count exactly
+    private let trapsEnabled = !LaunchFlags.uiTesting
     private let comboEnabled = !LaunchFlags.uiTesting
 
     // Fires every 0.05s. The handler only does work while the phase is .playing.
     private let ticker = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
-    init(mode: GameMode) {
-        self.mode = mode
-        _bestScore = AppStorage(wrappedValue: 0, mode.bestScoreKey)
-    }
-
     var body: some View {
-        // GeometryReader tells us if the phone is turned sideways,
-        // so the layout can change and still fit on the screen.
+        // GeometryReader tells us if the phone is turned sideways
         GeometryReader { geo in
             let landscape = geo.size.width > geo.size.height
 
             ZStack {
-                Color.white.ignoresSafeArea()
+                GameBackground(glow: trapActive ? Constants.trapRed : Constants.accentsBlue)
 
-                VStack(spacing: landscape ? 8 : 12) {
-                    TitlePill(compact: landscape)
+                VStack(spacing: landscape ? 8 : 18) {
+                    if !landscape {
+                        Text("TAP FRENZY")
+                            .font(.system(size: 26, weight: .black, design: .rounded))
+                            .tracking(4)
+                            .foregroundStyle(LinearGradient(colors: [Color.white, Constants.accentsBlue],
+                                                            startPoint: .top, endPoint: .bottom))
+                    }
 
                     switch phase {
                     case .idle, .playing:
+                        Spacer(minLength: 0)
                         gameScreen(landscape: landscape)
                     case .over:
-                        resultScreen(landscape: landscape)
+                        Spacer(minLength: 0)
+                        ResultPanel(title: "Times up!",
+                                    score: score,
+                                    best: bestScore,
+                                    isNewBest: isNewBest,
+                                    compact: landscape,
+                                    onPlayAgain: playAgain)
                     }
 
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .frame(maxWidth: landscape ? 700 : 400)
+                .frame(maxWidth: landscape ? 700 : 420)
             }
         }
-                .onReceive(ticker) { _ in tick() }
-        // Show a normal Back button at the top, with no title text
+        .onReceive(ticker) { _ in tick() }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 
-    // MARK: Screen 1 - idle and playing
+    // MARK: Idle and playing
 
     @ViewBuilder
     private func gameScreen(landscape: Bool) -> some View {
@@ -330,147 +494,85 @@ struct GameView: View {
                     .frame(maxWidth: .infinity)
                 tapButton(size: 170)
             }
-            .foregroundColor(.black)
         } else {
-            VStack(spacing: 12) {
+            VStack(spacing: 22) {
                 infoBlock(compact: false)
-                tapButton(size: 229)
+                tapButton(size: 230)
             }
-            .foregroundColor(.black)
         }
     }
 
     // Score, combo badge, timer bar and status text
     private func infoBlock(compact: Bool) -> some View {
-        VStack(spacing: compact ? 4 : 12) {
-            Text("Score")
-                .font(.system(size: 17, weight: .bold))
-                .frame(height: compact ? 28 : 39)
+        VStack(spacing: compact ? 6 : 12) {
+            Text("SCORE")
+                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .tracking(3)
+                .foregroundColor(Color.white.opacity(0.55))
 
             scoreRow(compact: compact)
 
             // Full at the start, shrinks to nothing when time is up
-            TimerBar(progress: GameLogic.remainingFraction(timeLeft: timeLeft))
-                .frame(height: compact ? 32 : 44)
+            TimerBar(progress: GameLogic.remainingFraction(timeLeft: timeLeft),
+                     tint: trapActive ? Constants.trapRed : Constants.accentsBlue)
 
             Text(GameLogic.statusText(phase: phase, timeLeft: timeLeft, trapActive: trapActive))
-                .font(.system(size: 17, weight: .bold))
-                .foregroundColor(trapActive ? Constants.trapRed : .black)
-                .frame(height: compact ? 28 : 39)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(trapActive ? Constants.trapRed : Color.white)
         }
     }
 
     // The score in the middle. The "x2!" badge sits on its right and only shows during a combo.
     // The empty space on the left keeps the score centered.
     private func scoreRow(compact: Bool) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Color.clear
-                .frame(width: 44, height: 1)
+                .frame(width: 64, height: 1)
                 .accessibilityHidden(true)
 
             Text("\(score)")
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(size: compact ? 44 : 72, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundColor(.white)
                 .accessibilityIdentifier("scoreValue")
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.15), value: score)
 
             Text("x\(multiplier)!")
-                .font(.system(size: 17, weight: .heavy))
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
                 .foregroundColor(Constants.comboOrange)
-                .frame(width: 44, alignment: .leading)
+                .frame(width: 64, alignment: .leading)
                 .opacity(multiplier >= 2 ? 1 : 0)
-                .animation(.easeOut(duration: 0.1), value: multiplier)
+                .scaleEffect(multiplier >= 2 ? 1 : 0.6)
+                .animation(.spring(response: 0.25, dampingFraction: 0.5), value: multiplier)
                 .accessibilityHidden(multiplier < 2)
                 .accessibilityIdentifier("comboBadge")
         }
-        .frame(height: compact ? 28 : 39)
     }
 
     // The big round button. It turns red during a trap.
     private func tapButton(size: CGFloat) -> some View {
-        Button(action: handleTap) {
+        let tint = trapActive ? Constants.trapRed : Constants.accentsBlue
+
+        return Button(action: handleTap) {
             ZStack {
-                Circle().fill(trapActive ? Constants.trapRed : Constants.accentsBlue)
-                Text(trapActive ? "Trap!" : "Tap")
-                    .font(.system(size: size * 0.175, weight: .light))
+                Circle()
+                    .fill(LinearGradient(colors: [tint, tint.opacity(0.55)],
+                                         startPoint: .top, endPoint: .bottom))
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.4), lineWidth: 4)
+                Text(trapActive ? "TRAP!" : "TAP")
+                    .font(.system(size: size * 0.2, weight: .heavy, design: .rounded))
+                    .tracking(2)
                     .foregroundColor(.white)
             }
             .frame(width: size, height: size)
+            .neonGlow(tint, radius: 26)
             .contentShape(Circle())
         }
         .buttonStyle(PressScaleStyle())
         .animation(.easeInOut(duration: 0.1), value: trapActive)
         .accessibilityIdentifier("tapButton")
-    }
-
-    // MARK: Screen 2 - result
-
-    @ViewBuilder
-    private func resultScreen(landscape: Bool) -> some View {
-        if landscape {
-            HStack(spacing: 40) {
-                VStack(spacing: 4) {
-                    Text("Times up!")
-                        .font(.system(size: 17, weight: .bold))
-                        .frame(height: 28)
-
-                    Text("Your score")
-                        .font(.system(size: 17, weight: .medium))
-                        .frame(height: 28)
-
-                    Text("\(score)")
-                        .font(.system(size: 40, weight: .bold))
-                        .frame(height: 49)
-                        .accessibilityIdentifier("finalScore")
-                }
-
-                VStack(spacing: 12) {
-                    bestScoreText
-                    playAgainButton
-                }
-            }
-            .foregroundColor(.black)
-        } else {
-            VStack(spacing: 12) {
-                Text("Times up!")
-                    .font(.system(size: 17, weight: .bold))
-                    .frame(height: 39)
-
-                Text("Your score")
-                    .font(.system(size: 17, weight: .medium))
-                    .frame(height: 39)
-
-                Text("\(score)")
-                    .font(.system(size: 40, weight: .bold))
-                    .frame(height: 49)
-                    .accessibilityIdentifier("finalScore")
-
-                bestScoreText
-
-                playAgainButton
-                    .padding(.top, 12)
-            }
-            .foregroundColor(.black)
-        }
-    }
-
-    private var bestScoreText: some View {
-        Text("Best: \(bestScore)")
-            .font(.system(size: 17, weight: .medium))
-            .frame(height: 39)
-            .accessibilityIdentifier("bestScore")
-    }
-
-    // The design has no button here, but the brief says "try again", so we add a simple one.
-    private var playAgainButton: some View {
-        Button(action: playAgain) {
-            Text("Play again")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 12)
-                .background(Constants.accentsBlue)
-                .clipShape(Capsule())
-        }
-        .accessibilityIdentifier("playAgainButton")
     }
 
     // MARK: Game actions
@@ -481,6 +583,7 @@ struct GameView: View {
             startRound()
             score = 1                   // the tap that starts the round also counts
             lastTapDate = Date()
+            Haptics.tap()
         case .playing:
             registerPlayingTap()
         case .over:
@@ -500,6 +603,7 @@ struct GameView: View {
             score = GameLogic.scoreAfterTrapTap(score: score)
             multiplier = 1
             lastTapDate = nil
+            Haptics.error()
             return
         }
 
@@ -512,11 +616,13 @@ struct GameView: View {
         }
         score += multiplier
         lastTapDate = now
+        Haptics.tap()
     }
 
     private func startRound() {
         let now = Date()
         score = 0
+        isNewBest = false
         timeLeft = GameLogic.duration
         endDate = now.addingTimeInterval(GameLogic.duration)
         multiplier = 1
@@ -556,14 +662,17 @@ struct GameView: View {
     }
 
     private func finishRound() {
+        isNewBest = score > bestScore
         bestScore = GameLogic.updatedBest(currentBest: bestScore, score: score)
         trapActive = false
         multiplier = 1
         phase = .over
+        Haptics.success()
     }
 
     private func playAgain() {
         score = 0
+        isNewBest = false
         timeLeft = GameLogic.duration
         multiplier = 1
         lastTapDate = nil
@@ -572,48 +681,884 @@ struct GameView: View {
     }
 }
 
-// MARK: - Small reusable views
+#Preview("Tap Frenzy") {
+    NavigationStack {
+        GameView()
+    }
+}
+</file>
 
-// The "Tap Frenzy" rounded header at the top
-struct TitlePill: View {
-    // Smaller height when the phone is turned sideways
-    var compact: Bool = false
+<file path="TapFrenzy/HomeView.swift">
+import SwiftUI
+
+struct HomeView: View {
+    @State private var showSettings = false
+
+    // Best scores shown on the mode cards
+    @AppStorage(GameMode.tapFrenzy.bestScoreKey) private var tapFrenzyBest = 0
+    @AppStorage(GameMode.lightItUp.bestScoreKey) private var lightItUpBest = 0
 
     var body: some View {
-        Text("Tap Frenzy")
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundColor(.black)
-            .frame(maxWidth: 357, minHeight: compact ? 44 : 64)
-            .background(Constants.pillGray)
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 4)
+        ZStack(alignment: .topTrailing) {
+            GameBackground()
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 22) {
+                    logo
+                    modeCard(.tapFrenzy, best: tapFrenzyBest)
+                    modeCard(.lightItUp, best: lightItUpBest)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 56)
+                .padding(.bottom, 30)
+                .frame(maxWidth: 460)
+                .frame(maxWidth: .infinity)
+            }
+
+            settingsButton
+        }
+        // Home has no navigation bar. The game screens show one with a Back button.
+        .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+    }
+
+    // MARK: Pieces
+
+    private var logo: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(LinearGradient(colors: [Constants.accentsBlue, Constants.neonViolet],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 84, height: 84)
+                    .neonGlow(Constants.accentsBlue, radius: 18)
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 40, weight: .heavy))
+                    .foregroundColor(.white)
+            }
+
+            Text("TAP FRENZY")
+                .font(.system(size: 38, weight: .black, design: .rounded))
+                .tracking(2)
+                .foregroundStyle(LinearGradient(colors: [Color.white, Constants.neonCyan],
+                                                startPoint: .top, endPoint: .bottom))
+
+            Text("Choose your game")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(Color.white.opacity(0.6))
+        }
+        .padding(.bottom, 8)
+    }
+
+    private var settingsButton: some View {
+        Button {
+            showSettings = true
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 46, height: 46)
+                .background(Circle().fill(Constants.panel))
+                .overlay(Circle().strokeBorder(Constants.panelStroke, lineWidth: 1.5))
+        }
+        .padding(.trailing, 20)
+        .padding(.top, 8)
+        .accessibilityLabel("Settings")
+        .accessibilityIdentifier("settingsButton")
+    }
+
+    // A big NavigationLink card. It pushes the game screen of that mode.
+    private func modeCard(_ mode: GameMode, best: Int) -> some View {
+        NavigationLink {
+            destination(for: mode)
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(mode.accent.opacity(0.25))
+                    Image(systemName: mode.icon)
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundColor(mode.accent)
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mode.title)
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    Text(mode.subtitle)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(Color.white.opacity(0.65))
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(spacing: 0) {
+                    Text("BEST")
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
+                        .tracking(1.5)
+                        .foregroundColor(Color.white.opacity(0.55))
+                    Text("\(best)")
+                        .font(.system(size: 26, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(mode.accent)
+                }
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, minHeight: 120)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(LinearGradient(colors: [mode.accent.opacity(0.30), mode.accent.opacity(0.06)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(mode.accent.opacity(0.75), lineWidth: 2)
+            )
+            .neonGlow(mode.accent.opacity(0.6), radius: 12)
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityIdentifier(mode == .tapFrenzy ? "tapFrenzyModeButton" : "lightItUpModeButton")
+    }
+
+    @ViewBuilder
+    private func destination(for mode: GameMode) -> some View {
+        switch mode {
+        case .tapFrenzy: GameView()
+        case .lightItUp: LightItUpView()
+        }
     }
 }
 
-// Thin bar that starts full and shrinks from right to left as time runs out
-struct TimerBar: View {
-    // 1.0 = full bar, 0.0 = empty
-    let progress: Double
+#Preview("Home") {
+    NavigationStack {
+        HomeView()
+    }
+}
+</file>
+
+<file path="TapFrenzy/Level.swift">
+import Foundation
+
+// The four levels of Light It Up (60-second round shown; they scale with the round length)
+//   L1  first 25%   3 cards in a row   1.5s window
+//   L2  25% - 50%   4 cards (2x2)      1.2s window
+//   L3  50% - 75%   6 cards (2x3)      1.0s window
+//   L4  last 25%    9 cards (3x3)      0.8s window, two cards may light at once
+enum Level: Int, CaseIterable {
+    case l1 = 1, l2, l3, l4
+
+    var number: Int { rawValue }
+    var title: String { "L\(rawValue)" }
+
+    var cardCount: Int {
+        switch self {
+        case .l1: return 3
+        case .l2: return 4
+        case .l3: return 6
+        case .l4: return 9
+        }
+    }
+
+    // Columns of the grid. This is what changes the grid shape.
+    var columns: Int {
+        switch self {
+        case .l1: return 3   // one row of 3
+        case .l2: return 2   // 2 x 2
+        case .l3: return 3   // 2 rows of 3
+        case .l4: return 3   // 3 x 3
+        }
+    }
+
+    var rows: Int { (cardCount + columns - 1) / columns }
+
+    // How long a lit card stays lit (seconds)
+    var litWindow: TimeInterval {
+        switch self {
+        case .l1: return 1.5
+        case .l2: return 1.2
+        case .l3: return 1.0
+        case .l4: return 0.8
+        }
+    }
+
+    // Only the last level can light two cards at the same time
+    var allowsDoubleLight: Bool { self == .l4 }
+
+    // Short text for the level-up flash
+    var note: String {
+        switch self {
+        case .l1: return "Warm-up"
+        case .l2: return "Focus up!"
+        case .l3: return "Scan the grid!"
+        case .l4: return "Two cards can light at once!"
+        }
+    }
+
+    // The level for the time that has passed. Each level takes a quarter of the round.
+    static func forElapsed(_ elapsed: TimeInterval, roundLength: TimeInterval) -> Level {
+        guard roundLength > 0 else { return .l1 }
+        let fraction = elapsed / roundLength
+        switch fraction {
+        case ..<0.25: return .l1
+        case ..<0.5:  return .l2
+        case ..<0.75: return .l3
+        default:      return .l4
+        }
+    }
+}
+</file>
+
+<file path="TapFrenzy/LightItUpView.swift">
+import SwiftUI
+
+// The Light It Up game screen: idle -> playing -> over
+struct LightItUpView: View {
+    // Settings and saved data
+    @AppStorage(RoundLength.storageKey) private var roundLengthRaw = RoundLength.normal.rawValue
+    @AppStorage(GameMode.lightItUp.bestScoreKey) private var bestScore = 0
+
+    // Round state
+    @State private var phase: GamePhase = .idle
+    @State private var level: Level = .l1
+    @State private var cards: [Card] = Card.makeCards(count: Level.l1.cardCount)
+    @State private var score = 0
+    @State private var lives = LightItUpLogic.maxLives
+    @State private var timeLeft: TimeInterval = RoundLength.normal.seconds
+    @State private var roundSeconds: TimeInterval = RoundLength.normal.seconds
+    @State private var startDate = Date()
+    @State private var nextLightDate = Date()
+    @State private var endedEarly = false
+    @State private var isNewBest = false
+
+    // Feedback
+    @State private var flashes: [Int: FeedbackKind] = [:]
+    @State private var levelBanner: Level? = nil
+
+    // One clock for everything. It uses the real time, like Tap Frenzy does.
+    private let ticker = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+
+    private var selectedLength: RoundLength { RoundLength.from(stored: roundLengthRaw) }
+
+    private var displayTimeLeft: TimeInterval {
+        phase == .idle ? selectedLength.seconds : timeLeft
+    }
+    private var progress: Double {
+        phase == .idle ? 1 : GameLogic.remainingFraction(timeLeft: timeLeft, duration: roundSeconds)
+    }
+    private var secondsLeft: Int { Int(ceil(displayTimeLeft)) }
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Constants.trackGray).frame(height: 4)
-                Capsule()
-                    .fill(Constants.accentsBlue)
-                    .frame(width: max(0, geo.size.width * progress), height: 4)
+            let landscape = geo.size.width > geo.size.height
+
+            ZStack {
+                GameBackground(glow: level.glow)
+
+                Group {
+                    if landscape {
+                        HStack(spacing: 20) {
+                            hud(compact: true)
+                                .frame(width: 220)
+                            stage(landscape: true)
+                        }
+                    } else {
+                        VStack(spacing: 16) {
+                            hud(compact: false)
+                            stage(landscape: false)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+
+                levelUpOverlay
             }
-            .frame(maxHeight: .infinity)
         }
-        .padding(.horizontal, 6)
-        .accessibilityElement()
-        .accessibilityLabel("Time left")
-        .accessibilityValue("\(Int(progress * 100)) percent")
-        .accessibilityIdentifier("timerBar")
+        .onReceive(ticker) { _ in tick() }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("")
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+
+    // MARK: HUD (score, level, lives, time)
+
+    private func hud(compact: Bool) -> some View {
+        VStack(spacing: 12) {
+            if compact {
+                VStack(spacing: 10) {
+                    scoreBlock
+                    levelBadge
+                    HeartsView(lives: lives)
+                }
+            } else {
+                HStack {
+                    scoreBlock
+                    Spacer()
+                    levelBadge
+                    Spacer()
+                    HeartsView(lives: lives)
+                }
+            }
+
+            HStack(spacing: 10) {
+                TimerBar(progress: progress, tint: level.glow)
+                Text("\(secondsLeft)s")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundColor(.white)
+                    .frame(width: 48, alignment: .trailing)
+                    .accessibilityIdentifier("timeLeft")
+            }
+        }
+        .padding(14)
+        .glassPanel(cornerRadius: 22)
+    }
+
+    private var scoreBlock: some View {
+        VStack(spacing: 0) {
+            Text("SCORE")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .tracking(2)
+                .foregroundColor(Color.white.opacity(0.55))
+
+            Text("\(score)")
+                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundColor(.white)
+                .accessibilityIdentifier("scoreValue")
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.15), value: score)
+        }
+    }
+
+    private var levelBadge: some View {
+        VStack(spacing: 2) {
+            Text("LEVEL")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .tracking(2)
+                .foregroundColor(Color.white.opacity(0.55))
+
+            Text(level.title)
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundColor(level.glow)
+                .neonGlow(level.glow, radius: 10)
+                .accessibilityIdentifier("levelValue")
+        }
+    }
+
+    // MARK: Stage (changes with the phase)
+
+    @ViewBuilder
+    private func stage(landscape: Bool) -> some View {
+        switch phase {
+        case .idle:
+            idleStage
+        case .playing:
+            board
+        case .over:
+            resultStage(landscape: landscape)
+        }
+    }
+
+    private var idleStage: some View {
+        VStack(spacing: 20) {
+            Spacer(minLength: 0)
+
+            VStack(spacing: 14) {
+                Text("LIGHT IT UP")
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                    .tracking(2)
+                    .foregroundColor(.white)
+                    .neonGlow(level.glow, radius: 14)
+
+                Text("Tap the lit card before it goes dark. A wrong tap or a missed card costs a life.")
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color.white.opacity(0.75))
+
+                HStack(spacing: 10) {
+                    infoChip(icon: "heart.fill", text: "\(LightItUpLogic.maxLives) lives", id: "livesInfo")
+                    infoChip(icon: "timer", text: "\(selectedLength.title) round", id: "roundLabel")
+                }
+            }
+            .padding(20)
+            .glassPanel()
+
+            Button(action: startRound) {
+                ArcadeButtonLabel(title: "START", icon: "play.fill", tint: level.glow)
+            }
+            .buttonStyle(PressScaleStyle())
+            .accessibilityIdentifier("startButton")
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func infoChip(icon: String, text: String, id: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(text)
+                .accessibilityIdentifier(id)
+        }
+        .font(.system(size: 14, weight: .bold, design: .rounded))
+        .foregroundColor(.white)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(Color.white.opacity(0.1)))
+    }
+
+    private func resultStage(landscape: Bool) -> some View {
+        VStack {
+            Spacer(minLength: 0)
+            ResultPanel(title: endedEarly ? "Out of lives!" : "Times up!",
+                        score: score,
+                        best: bestScore,
+                        isNewBest: isNewBest,
+                        detail: "Reached level \(level.number)",
+                        compact: landscape,
+                        onPlayAgain: playAgain)
+            Spacer(minLength: 0)
+        }
+    }
+
+    // The card grid. LazyVGrid + GridItem: the number of columns and cards comes from the level,
+    // and the card size is worked out from the free space, so it fits in portrait and landscape.
+    private var board: some View {
+        GeometryReader { geo in
+            let spacing: CGFloat = 14
+            let columnCount = level.columns
+            let rowCount = level.rows
+            let sideByWidth = (geo.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
+            let sideByHeight = (geo.size.height - spacing * CGFloat(rowCount - 1)) / CGFloat(rowCount)
+            let side = max(40, min(sideByWidth, sideByHeight, 140))
+            let columns = Array(repeating: GridItem(.fixed(side), spacing: spacing), count: columnCount)
+
+            LazyVGrid(columns: columns, spacing: spacing) {
+                ForEach(cards) { card in
+                    CardView(card: card, glow: level.glow, flash: flashes[card.id]) {
+                        handleTap(card)
+                    }
+                    .frame(width: side, height: side)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+
+    // MARK: Level-up flash
+
+    @ViewBuilder
+    private var levelUpOverlay: some View {
+        if let banner = levelBanner {
+            ZStack {
+                banner.glow.opacity(0.18)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 6) {
+                    Text("LEVEL \(banner.number)!")
+                        .font(.system(size: 48, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                        .neonGlow(banner.glow, radius: 26)
+                        .accessibilityIdentifier("levelBanner")
+
+                    Text(banner.note)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundColor(banner.glow)
+                }
+            }
+            .transition(.opacity.combined(with: .scale(scale: 0.8)))
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func showBanner(_ newLevel: Level) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+            levelBanner = newLevel
+        }
+        Haptics.heavy()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            withAnimation(.easeOut(duration: 0.25)) {
+                if levelBanner == newLevel { levelBanner = nil }
+            }
+        }
+    }
+
+    // MARK: Round control
+
+    private func startRound() {
+        let now = Date()
+        roundSeconds = selectedLength.seconds
+        startDate = now
+        timeLeft = roundSeconds
+        score = 0
+        lives = LightItUpLogic.maxLives
+        level = .l1
+        cards = Card.makeCards(count: Level.l1.cardCount)
+        flashes = [:]
+        endedEarly = false
+        isNewBest = false
+        nextLightDate = now.addingTimeInterval(LightItUpLogic.firstLightDelay)
+        phase = .playing
+        Haptics.tap()
+    }
+
+    private func playAgain() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            phase = .idle
+            level = .l1
+            cards = Card.makeCards(count: Level.l1.cardCount)
+        }
+        score = 0
+        lives = LightItUpLogic.maxLives
+        timeLeft = selectedLength.seconds
+        flashes = [:]
+        levelBanner = nil
+    }
+
+    private func finishRound(endedEarly early: Bool) {
+        guard phase == .playing else { return }
+        endedEarly = early
+        isNewBest = score > bestScore
+        bestScore = GameLogic.updatedBest(currentBest: bestScore, score: score)
+
+        for index in cards.indices {
+            cards[index].isLit = false
+            cards[index].expiresAt = nil
+        }
+        levelBanner = nil
+        withAnimation(.easeInOut(duration: 0.25)) {
+            phase = .over
+        }
+        Haptics.success()
+    }
+
+    // MARK: The game loop (called by the ticker)
+
+    private func tick() {
+        guard phase == .playing else { return }
+        let now = Date()
+        let elapsed = now.timeIntervalSince(startDate)
+
+        timeLeft = max(0, roundSeconds - elapsed)
+        if timeLeft <= 0 {
+            finishRound(endedEarly: false)
+            return
+        }
+
+        // The level follows the clock
+        let newLevel = Level.forElapsed(elapsed, roundLength: roundSeconds)
+        if newLevel != level {
+            startLevel(newLevel, now: now)
+        }
+
+        // Lit cards that ran out of time are a miss
+        expireLitCards(now: now)
+        guard phase == .playing else { return }
+
+        // Time for the next light?
+        if now >= nextLightDate {
+            lightCards(now: now)
+        }
+    }
+
+    // New level: new number of cards, so the grid reflows by itself
+    private func startLevel(_ newLevel: Level, now: Date) {
+        withAnimation(.easeInOut(duration: 0.5)) {
+            level = newLevel
+            cards = Card.makeCards(count: newLevel.cardCount)
+            flashes = [:]
+        }
+        // A short pause so the player can read the new board
+        nextLightDate = max(nextLightDate, now.addingTimeInterval(0.8))
+        showBanner(newLevel)
+    }
+
+    private func lightCards(now: Date) {
+        let freeIndexes = cards.indices.filter { !cards[$0].isLit }
+        let wanted = LightItUpLogic.litCount(for: level, roll: Double.random(in: 0..<1))
+        let window = level.litWindow * LightItUpLogic.windowScale
+
+        for index in freeIndexes.shuffled().prefix(wanted) {
+            cards[index].isLit = true
+            cards[index].expiresAt = now.addingTimeInterval(window)
+        }
+
+        let randomGap = TimeInterval.random(in: LightItUpLogic.gapRange)
+        nextLightDate = now.addingTimeInterval(
+            LightItUpLogic.nextGap(level: level, randomGap: randomGap, windowScale: LightItUpLogic.windowScale)
+        )
+    }
+
+    // A lit card that was not tapped in time: it goes dark and the player loses a life
+    private func expireLitCards(now: Date) {
+        for index in cards.indices {
+            guard cards[index].isLit, let expiry = cards[index].expiresAt, now >= expiry else { continue }
+            let id = cards[index].id
+            cards[index].isLit = false
+            cards[index].expiresAt = nil
+            flash(id, .wrong)
+            loseLife()
+        }
+    }
+
+    // MARK: Taps
+
+    private func handleTap(_ card: Card) {
+        guard phase == .playing,
+              let index = cards.firstIndex(where: { $0.id == card.id }) else { return }
+
+        if cards[index].isLit {
+            // Correct: score up and clear the lit state
+            cards[index].isLit = false
+            cards[index].expiresAt = nil
+            score += 1
+            flash(card.id, .correct)
+            Haptics.tap()
+        } else {
+            // Wrong card: lose a life
+            flash(card.id, .wrong)
+            loseLife()
+        }
+    }
+
+    private func loseLife() {
+        guard phase == .playing else { return }
+        withAnimation {
+            lives = LightItUpLogic.livesAfterMistake(lives)
+        }
+        Haptics.error()
+        if LightItUpLogic.isOutOfLives(lives) {
+            finishRound(endedEarly: true)
+        }
+    }
+
+    // Brief green (correct) or red (wrong) flash on a card
+    private func flash(_ id: Int, _ kind: FeedbackKind) {
+        withAnimation(.easeOut(duration: 0.15)) {
+            flashes[id] = kind
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                flashes[id] = nil
+            }
+        }
     }
 }
 
-// Makes the big button shrink a little while pressed
+#Preview("Light It Up") {
+    NavigationStack {
+        LightItUpView()
+    }
+}
+</file>
+
+<file path="TapFrenzy/SettingsView.swift">
+import SwiftUI
+
+// Sheet opened from the Home screen. Picks the round length for Light It Up.
+struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(RoundLength.storageKey) private var roundLengthRaw = RoundLength.normal.rawValue
+
+    var body: some View {
+        ZStack {
+            GameBackground(glow: Constants.neonViolet)
+
+            VStack(spacing: 20) {
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Button("Done") { dismiss() }
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundColor(Constants.neonCyan)
+                        .accessibilityIdentifier("settingsDoneButton")
+                }
+
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("ROUND LENGTH")
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .tracking(2)
+                        .foregroundColor(Color.white.opacity(0.55))
+
+                    HStack(spacing: 12) {
+                        ForEach(RoundLength.allCases) { option in
+                            chip(option)
+                        }
+                    }
+
+                    Text("Applies to Light It Up. Each of the 4 levels takes a quarter of the round, so a longer round means longer levels. Tap Frenzy always lasts 10 seconds.")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(Color.white.opacity(0.65))
+                }
+                .padding(18)
+                .glassPanel()
+
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func chip(_ option: RoundLength) -> some View {
+        let selected = option == RoundLength.from(stored: roundLengthRaw)
+
+        return Button {
+            roundLengthRaw = option.rawValue
+            Haptics.tap()
+        } label: {
+            VStack(spacing: 2) {
+                Text("\(option.rawValue)")
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                Text("seconds")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+            }
+            .foregroundColor(selected ? Color.white : Color.white.opacity(0.6))
+            .frame(maxWidth: .infinity, minHeight: 84)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(selected ? Constants.neonViolet.opacity(0.45) : Color.white.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(selected ? Constants.neonViolet : Constants.panelStroke,
+                                  lineWidth: selected ? 2.5 : 1.5)
+            )
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityIdentifier("roundLength\(option.rawValue)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+#Preview {
+    SettingsView()
+}
+</file>
+
+<file path="TapFrenzy/Theme.swift">
+import SwiftUI
+import UIKit
+
+// MARK: - Colours
+
+enum Constants {
+    // Background
+    static let bgTop = Color(red: 0.04, green: 0.04, blue: 0.13)
+    static let bgBottom = Color(red: 0.10, green: 0.05, blue: 0.22)
+    static let panel = Color.white.opacity(0.07)
+    static let panelStroke = Color.white.opacity(0.14)
+
+    // Neon colours
+    static let accentsBlue = Color(red: 0, green: 0.53, blue: 1)
+    static let neonCyan = Color(red: 0.0, green: 0.9, blue: 1.0)
+    static let neonViolet = Color(red: 0.62, green: 0.4, blue: 1.0)
+    static let neonAmber = Color(red: 1.0, green: 0.78, blue: 0.2)
+    static let neonMagenta = Color(red: 1.0, green: 0.25, blue: 0.8)
+
+    // Feedback colours
+    static let trapRed = Color(red: 1, green: 0.23, blue: 0.19)
+    static let comboOrange = Color(red: 1, green: 0.58, blue: 0)
+    static let correctGreen = Color(red: 0.2, green: 0.95, blue: 0.5)
+    static let heartRed = Color(red: 1, green: 0.3, blue: 0.4)
+}
+
+// Each level has its own glow colour, so the player sees the level change without reading.
+extension Level {
+    var glow: Color {
+        switch self {
+        case .l1: return Constants.neonCyan
+        case .l2: return Constants.neonViolet
+        case .l3: return Constants.neonAmber
+        case .l4: return Constants.neonMagenta
+        }
+    }
+}
+
+// Look of each mode on the Home screen
+extension GameMode {
+    var subtitle: String {
+        switch self {
+        case .tapFrenzy: return "Smash the button for 10 seconds. Chase combos, dodge the traps."
+        case .lightItUp: return "Hit the lit card before it goes dark. 4 levels, 3 lives."
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .tapFrenzy: return "hand.tap.fill"
+        case .lightItUp: return "lightbulb.fill"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .tapFrenzy: return Constants.accentsBlue
+        case .lightItUp: return Constants.neonViolet
+        }
+    }
+}
+
+// MARK: - Helpers
+
+extension View {
+    // Soft neon glow around a view
+    func neonGlow(_ color: Color, radius: CGFloat = 12) -> some View {
+        self
+            .shadow(color: color.opacity(0.85), radius: radius / 2)
+            .shadow(color: color.opacity(0.55), radius: radius)
+    }
+
+    // Dark glass card with a thin border
+    func glassPanel(cornerRadius: CGFloat = 24) -> some View {
+        self
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Constants.panel)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Constants.panelStroke, lineWidth: 1.5)
+            )
+    }
+}
+
+// Phone vibration for taps, hits and mistakes
+enum Haptics {
+    static func tap() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    static func heavy() { UIImpactFeedbackGenerator(style: .heavy).impactOccurred() }
+    static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+    static func error() { UINotificationFeedbackGenerator().notificationOccurred(.error) }
+}
+
+// MARK: - Shared views
+
+// Dark gradient with a coloured glow at the top
+struct GameBackground: View {
+    var glow: Color = Constants.accentsBlue
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Constants.bgTop, Constants.bgBottom],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [glow.opacity(0.35), Color.clear],
+                           center: .top, startRadius: 10, endRadius: 420)
+            RadialGradient(colors: [Constants.neonMagenta.opacity(0.16), Color.clear],
+                           center: .bottomTrailing, startRadius: 10, endRadius: 360)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+// Makes a button shrink a little while pressed
 struct PressScaleStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -622,230 +1567,170 @@ struct PressScaleStyle: ButtonStyle {
     }
 }
 
-#Preview("Game") {
-    ContentView()
-}
-</file>
+// The big glowing capsule used for START and PLAY AGAIN
+struct ArcadeButtonLabel: View {
+    let title: String
+    var icon: String? = nil
+    var tint: Color = Constants.neonCyan
 
-<file path="TapFrenzy/HomeView.swift">
-import SwiftUI
-
-struct HomeView: View {
     var body: some View {
-        VStack(spacing: 32) {
-            // The app title
-            Text("Tap Frenzy")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundColor(.black)
+        HStack(spacing: 10) {
+            if let icon = icon {
+                Image(systemName: icon)
+            }
+            Text(title)
+        }
+        .font(.system(size: 20, weight: .heavy, design: .rounded))
+        .foregroundColor(.white)
+        .padding(.horizontal, 36)
+        .padding(.vertical, 16)
+        .background(
+            Capsule().fill(LinearGradient(colors: [tint, tint.opacity(0.65)],
+                                          startPoint: .top, endPoint: .bottom))
+        )
+        .overlay(Capsule().strokeBorder(Color.white.opacity(0.35), lineWidth: 1.5))
+        .neonGlow(tint, radius: 14)
+    }
+}
 
-            // One big button per mode
-            modeButton(.LightUp)
-            modeButton(.trap)
+// Bar that starts full and shrinks from right to left as time runs out
+struct TimerBar: View {
+    // 1.0 = full bar, 0.0 = empty
+    let progress: Double
+    var tint: Color = Constants.neonCyan
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.12))
+                Capsule()
+                    .fill(LinearGradient(colors: [tint, tint.opacity(0.6)],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(0, geo.size.width * progress))
+                    .neonGlow(tint, radius: 8)
+            }
+        }
+        .frame(height: 12)
+        .accessibilityElement()
+        .accessibilityLabel("Time left")
+        .accessibilityValue("\(Int(progress * 100)) percent")
+        .accessibilityIdentifier("timerBar")
+    }
+}
+
+// Row of hearts. Empty hearts are lives that are gone.
+struct HeartsView: View {
+    let lives: Int
+    var maxLives: Int = LightItUpLogic.maxLives
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<maxLives, id: \.self) { index in
+                let alive = index < lives
+                Image(systemName: alive ? "heart.fill" : "heart")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(alive ? Constants.heartRed : Color.white.opacity(0.25))
+                    .scaleEffect(alive ? 1 : 0.8)
+                    .shadow(color: alive ? Constants.heartRed.opacity(0.8) : Color.clear, radius: 6)
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: lives)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Lives")
+        .accessibilityValue("\(lives)")
+        .accessibilityIdentifier("lives")
+    }
+}
+
+// The "round finished" card, used by both modes
+struct ResultPanel: View {
+    let title: String
+    let score: Int
+    let best: Int
+    let isNewBest: Bool
+    var detail: String? = nil
+    var compact: Bool = false
+    let onPlayAgain: () -> Void
+
+    var body: some View {
+        Group {
+            if compact {
+                HStack(spacing: 32) {
+                    scoreBlock
+                    actions
+                }
+            } else {
+                VStack(spacing: 18) {
+                    scoreBlock
+                    actions
+                }
+            }
         }
         .padding(24)
-        .frame(maxWidth: 400)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.ignoresSafeArea())
-        // Home has no navigation bar. The game screens show one with a Back button.
-        .toolbar(.hidden, for: .navigationBar)
+        .glassPanel()
+        .foregroundColor(.white)
     }
 
-    // A NavigationLink that pushes the game screen for one mode.
-    // The label is the big blue button.
-    private func modeButton(_ mode: GameMode) -> some View {
-        NavigationLink {
-            GameView(mode: mode)
-            CardGridView(mode : mode)
-        } label: {
-            Text(mode.title)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, minHeight: 120)
-                .background(Constants.accentsBlue)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-        }
-        .accessibilityIdentifier(mode == .classic ? "classicModeButton" : "trapModeButton")
-    }
-}
+    private var scoreBlock: some View {
+        VStack(spacing: 6) {
+            Text(title)
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
 
-#Preview("Trap") {
-    NavigationStack {
-        GameView(mode: .trap)
-    }
-}
-</file>
+            Text("Your score")
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundColor(Color.white.opacity(0.65))
 
-<file path="TapFrenzy/Level.swift">
-import Foundation
+            Text("\(score)")
+                .font(.system(size: 64, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .accessibilityIdentifier("finalScore")
 
-enum Level: CaseIterable {
-    case l1, l2, l3, l4
-
-    // Label shown on screen
-    var title: String {
-        switch self {
-        case .l1: return "L1"
-        case .l2: return "L2"
-        case .l3: return "L3"
-        case .l4: return "L4"
+            if let detail = detail {
+                Text(detail)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color.white.opacity(0.65))
+                    .accessibilityIdentifier("resultDetail")
+            }
         }
     }
 
-    // How many cards the grid has at this level
-    var gridCount: Int {
-        switch self {
-        case .l1: return 4
-        case .l2: return 9
-        case .l3: return 16
-        case .l4: return 25
-        }
-    }
+    private var actions: some View {
+        VStack(spacing: 14) {
+            if isNewBest {
+                Label("NEW BEST!", systemImage: "trophy.fill")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundColor(Constants.neonAmber)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Constants.neonAmber.opacity(0.18)))
+                    .overlay(Capsule().strokeBorder(Constants.neonAmber.opacity(0.7), lineWidth: 1.5))
+                    .accessibilityIdentifier("newBestBadge")
+            }
 
-    // How long a lit card stays lit (seconds). Higher levels give less time.
-    var litWindow: TimeInterval {
-        switch self {
-        case .l1: return 0.8
-        case .l2: return 0.7
-        case .l3: return 0.6
-        case .l4: return 0.5
-        }
-    }
+            Text("Best: \(best)")
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .accessibilityIdentifier("bestScore")
 
-    // The level for the time that has passed in the round.
-    // The 10 second round splits into four parts of 2.5 seconds each.
-    static func forElapsed(_ elapsed: TimeInterval) -> Level {
-        switch elapsed {
-        case ..<2.5: return .l1
-        case ..<5:   return .l2
-        case ..<7.5: return .l3
-        default:     return .l4
+            Button(action: onPlayAgain) {
+                ArcadeButtonLabel(title: "PLAY AGAIN", icon: "arrow.clockwise")
+            }
+            .buttonStyle(PressScaleStyle())
+            .accessibilityIdentifier("playAgainButton")
         }
     }
 }
 </file>
 
-<file path="TapFrenzy.xcodeproj/project.xcworkspace/contents.xcworkspacedata">
-<?xml version="1.0" encoding="UTF-8"?>
-<Workspace
-   version = "1.0">
-   <FileRef
-      location = "self:">
-   </FileRef>
-</Workspace>
-</file>
+<file path=".gitignore">
+## macOS
+.DS_Store
 
-<file path="TapFrenzy.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist">
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>IDEDidComputeMac32BitWarning</key>
-	<true/>
-</dict>
-</plist>
-</file>
-
-<file path="TapFrenzy.xcodeproj/xcshareddata/xcschemes/TapFrenzy.xcscheme">
-<?xml version="1.0" encoding="UTF-8"?>
-<Scheme
-   LastUpgradeVersion = "2600"
-   version = "1.7">
-   <BuildAction
-      parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      buildArchitectures = "Automatic">
-      <BuildActionEntries>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
-               BuildableName = "TapFrenzy.app"
-               BlueprintName = "TapFrenzy"
-               ReferencedContainer = "container:TapFrenzy.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-      </BuildActionEntries>
-   </BuildAction>
-   <TestAction
-      buildConfiguration = "Debug"
-      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
-      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
-      <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7C6F3B06E869C373BAEBD9D2"
-               BuildableName = "TapFrenzyTests.xctest"
-               BlueprintName = "TapFrenzyTests"
-               ReferencedContainer = "container:TapFrenzy.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "46AB4DE2F40C65282C82311C"
-               BuildableName = "TapFrenzyUITests.xctest"
-               BlueprintName = "TapFrenzyUITests"
-               ReferencedContainer = "container:TapFrenzy.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
-   </TestAction>
-   <LaunchAction
-      buildConfiguration = "Debug"
-      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
-      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      launchStyle = "0"
-      useCustomWorkingDirectory = "NO"
-      ignoresPersistentStateOnLaunch = "NO"
-      debugDocumentVersioning = "YES"
-      debugServiceExtension = "internal"
-      allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
-            BuildableName = "TapFrenzy.app"
-            BlueprintName = "TapFrenzy"
-            ReferencedContainer = "container:TapFrenzy.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
-   </LaunchAction>
-   <ProfileAction
-      buildConfiguration = "Release"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      savedToolIdentifier = ""
-      useCustomWorkingDirectory = "NO"
-      debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B61767D7DB558A1F1E497FF2"
-            BuildableName = "TapFrenzy.app"
-            BlueprintName = "TapFrenzy"
-            ReferencedContainer = "container:TapFrenzy.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
-   </ProfileAction>
-   <AnalyzeAction
-      buildConfiguration = "Debug">
-   </AnalyzeAction>
-   <ArchiveAction
-      buildConfiguration = "Release"
-      revealArchiveInOrganizer = "YES">
-   </ArchiveAction>
-</Scheme>
+## Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcresult
 </file>
 
 <file path="TapFrenzy.xcodeproj/project.pbxproj">
@@ -859,7 +1744,14 @@ enum Level: CaseIterable {
 
 /* Begin PBXBuildFile section */
 		B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */; };
-		9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E549CDF39697F1AEA383E /* ContentView.swift */; };
+		6D2F8B41EA5C7031F9A82B01 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A01 /* Card.swift */; };
+		6D2F8B41EA5C7031F9A82B02 /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A02 /* CardView.swift */; };
+		6D2F8B41EA5C7031F9A82B03 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A03 /* GameView.swift */; };
+		6D2F8B41EA5C7031F9A82B04 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A04 /* HomeView.swift */; };
+		6D2F8B41EA5C7031F9A82B05 /* Level.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A05 /* Level.swift */; };
+		6D2F8B41EA5C7031F9A82B06 /* LightItUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */; };
+		6D2F8B41EA5C7031F9A82B07 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */; };
+		6D2F8B41EA5C7031F9A82B08 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1E7A30D94B6F2208E71A08 /* Theme.swift */; };
 		4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */; };
 		3F5355CA475348AB4598D3F2 /* GameLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08373860A73CDF7E3B19B73E /* GameLogicTests.swift */; };
 		A88AFC012C073E6BC81ACF2A /* TapFrenzyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */; };
@@ -884,7 +1776,14 @@ enum Level: CaseIterable {
 
 /* Begin PBXFileReference section */
 		1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyApp.swift; sourceTree = "<group>"; };
-		371E549CDF39697F1AEA383E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A01 /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A02 /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A03 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A04 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A05 /* Level.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Level.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightItUpView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5C1E7A30D94B6F2208E71A08 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogic.swift; sourceTree = "<group>"; };
 		08373860A73CDF7E3B19B73E /* GameLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLogicTests.swift; sourceTree = "<group>"; };
 		24D9888E46D76EF769B20844 /* TapFrenzyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapFrenzyUITests.swift; sourceTree = "<group>"; };
@@ -932,7 +1831,14 @@ enum Level: CaseIterable {
 			isa = PBXGroup;
 			children = (
 				1E55F91FBCE8184671DF26D7 /* TapFrenzyApp.swift */,
-				371E549CDF39697F1AEA383E /* ContentView.swift */,
+				5C1E7A30D94B6F2208E71A01 /* Card.swift */,
+				5C1E7A30D94B6F2208E71A02 /* CardView.swift */,
+				5C1E7A30D94B6F2208E71A03 /* GameView.swift */,
+				5C1E7A30D94B6F2208E71A04 /* HomeView.swift */,
+				5C1E7A30D94B6F2208E71A05 /* Level.swift */,
+				5C1E7A30D94B6F2208E71A06 /* LightItUpView.swift */,
+				5C1E7A30D94B6F2208E71A07 /* SettingsView.swift */,
+				5C1E7A30D94B6F2208E71A08 /* Theme.swift */,
 				C66BEC1D1F68205A7A8CF4DC /* GameLogic.swift */,
 			);
 			path = TapFrenzy;
@@ -1093,7 +1999,14 @@ enum Level: CaseIterable {
 			buildActionMask = 2147483647;
 			files = (
 				B73B802F55FDF06A2C728C50 /* TapFrenzyApp.swift in Sources */,
-				9E0BF8DF6A2ACE7388B73DA7 /* ContentView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B01 /* Card.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B02 /* CardView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B03 /* GameView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B04 /* HomeView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B05 /* Level.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B06 /* LightItUpView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B07 /* SettingsView.swift in Sources */,
+				6D2F8B41EA5C7031F9A82B08 /* Theme.swift in Sources */,
 				4FF198C9C17A1D06E898BD54 /* GameLogic.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1360,18 +2273,6 @@ enum Level: CaseIterable {
 }
 </file>
 
-<file path=".gitignore">
-## macOS
-.DS_Store
-
-## Xcode
-build/
-DerivedData/
-xcuserdata/
-*.xcuserstate
-*.xcresult
-</file>
-
 <file path="README.md">
 # Tap Frenzy
 
@@ -1440,29 +2341,6 @@ and the combo so the taps can be counted exactly.
 ## CI
 
 See `.github/workflows/ios-ci.yml`. It builds from the committed `TapFrenzy.xcodeproj`.
-</file>
-
-<file path="TapFrenzy/TapFrenzyApp.swift">
-import SwiftUI
-@main
-struct TapFrenzyApp: App {
-    init() {
-        // UI tests pass "--reset" so every test run starts with no saved best scores
-        if CommandLine.arguments.contains("--reset") {
-            UserDefaults.standard.removeObject(forKey: GameMode.classic.bestScoreKey)
-            UserDefaults.standard.removeObject(forKey: GameMode.trap.bestScoreKey)
-        }
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            // The stack starts on Home. Pushed screens get a Back button automatically.
-            NavigationStack {
-                HomeView()
-            }
-        }
-    }
-}
 </file>
 
 <file path=".github/workflows/ios-ci.yml">
@@ -1694,10 +2572,37 @@ jobs:
           retention-days: 7
 </file>
 
+<file path="TapFrenzy/TapFrenzyApp.swift">
+import SwiftUI
+
+@main
+struct TapFrenzyApp: App {
+    init() {
+        // UI tests pass "--reset" so every run starts with no saved scores and the default round length
+        if CommandLine.arguments.contains("--reset") {
+            for mode in GameMode.allCases {
+                UserDefaults.standard.removeObject(forKey: mode.bestScoreKey)
+            }
+            UserDefaults.standard.removeObject(forKey: RoundLength.storageKey)
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            // The stack starts on Home. Pushed screens get a Back button automatically.
+            NavigationStack {
+                HomeView()
+            }
+            .preferredColorScheme(.dark)
+        }
+    }
+}
+</file>
+
 <file path="TapFrenzy/GameLogic.swift">
 import Foundation
 
-// The three phases of the game: waiting for the first tap, the 10 second round, and the result screen.
+// The three phases of a round: waiting for the start, playing, and the result screen.
 enum GamePhase {
     case idle
     case playing
@@ -1706,15 +2611,15 @@ enum GamePhase {
 
 // Launch arguments used by the UI tests.
 enum LaunchFlags {
-    // "--ui-testing" turns off the random trap and the combo,
-    // so the UI test can count taps exactly.
+    // "--ui-testing" turns off the random trap and the combo in Tap Frenzy,
+    // and makes Light It Up slower, so the UI tests can count exactly.
     static let uiTesting = CommandLine.arguments.contains("--ui-testing")
 }
 
 // Game settings and the small pure functions behind the UI.
 // They live outside the view so they can be unit tested.
 enum GameLogic {
-    // Round length in seconds
+    // Tap Frenzy round length in seconds
     static let duration: TimeInterval = 10
 
     // MARK: Combo (C1)
@@ -1754,7 +2659,7 @@ enum GameLogic {
     // MARK: Timer bar, best score, status text
 
     // How much of the round is left, from 1.0 (full bar at the start) to 0.0 (time is up).
-    // The bar shrinks as the round runs out. Values are clamped to 0...1.
+    // Values are clamped to 0...1.
     static func remainingFraction(timeLeft: TimeInterval, duration: TimeInterval = GameLogic.duration) -> Double {
         guard duration > 0 else { return 0 }
         let fraction = timeLeft / duration
@@ -1780,153 +2685,177 @@ enum GameLogic {
     }
 }
 
-// The two game modes. Each one is a screen of its own.
-enum GameMode {
-    case LightUp
-    case trap
+// MARK: - Game modes
 
-    // Text on the Home buttons
+// The two modes on the Home screen
+enum GameMode: CaseIterable {
+    case tapFrenzy
+    case lightItUp
+
     var title: String {
         switch self {
-        case .LightUp: return "LightUp"
-        case .trap: return "Tap Frenzy"
-        }
-    }
-
-    // Only Trap mode turns the red trap on
-    var hasTraps: Bool {
-        switch self {
-        case .LightUp: return false
-        case .trap: return true
+        case .tapFrenzy: return "Tap Frenzy"
+        case .lightItUp: return "Light It Up"
         }
     }
 
     // Each mode keeps its own best score
     var bestScoreKey: String {
         switch self {
-        case .LightUp: return "bestScore.LightUp"
-        case .trap: return "bestScore.trap"
+        case .tapFrenzy: return "bestScore.tapFrenzy"
+        case .lightItUp: return "bestScore.lightItUp"
         }
+    }
+}
+
+// MARK: - Settings
+
+// Round length choices for Light It Up (Settings sheet)
+enum RoundLength: Int, CaseIterable, Identifiable {
+    case short = 30
+    case normal = 60
+    case long = 90
+
+    // Key used with @AppStorage
+    static let storageKey = "roundLength"
+
+    var id: Int { rawValue }
+    var seconds: TimeInterval { TimeInterval(rawValue) }
+    var title: String { "\(rawValue)s" }
+
+    // Turns the saved number back into a choice. Anything unknown becomes 60s.
+    static func from(stored: Int) -> RoundLength {
+        RoundLength(rawValue: stored) ?? .normal
+    }
+}
+
+// MARK: - Light It Up rules
+
+enum LightItUpLogic {
+    static let maxLives = 3
+
+    // A new light comes every 1 to 2 seconds
+    static let gapRange: ClosedRange<TimeInterval> = 1.0...2.0
+    // The card stays dark at least this long before the next light
+    static let restGap: TimeInterval = 0.25
+    // Chance of two lit cards at once on the last level
+    static let doubleLightChance = 0.5
+
+    // The UI tests wait longer for the first light and keep lit cards lit 3x longer
+    static var firstLightDelay: TimeInterval { LaunchFlags.uiTesting ? 2.5 : 0.8 }
+    static var windowScale: Double { LaunchFlags.uiTesting ? 3 : 1 }
+
+    // Time until the next light. On the first levels the lit window (1.5s, 1.2s)
+    // is longer than the shortest gap (1s), so the gap is stretched to keep
+    // only one card lit at a time.
+    static func nextGap(level: Level, randomGap: TimeInterval, windowScale: Double = 1) -> TimeInterval {
+        max(randomGap, level.litWindow * windowScale + restGap)
+    }
+
+    // How many cards light up now. roll is a random number from 0 to 1.
+    static func litCount(for level: Level, roll: Double) -> Int {
+        guard level.allowsDoubleLight else { return 1 }
+        return roll < doubleLightChance ? 2 : 1
+    }
+
+    // A wrong tap or a missed card costs one life
+    static func livesAfterMistake(_ lives: Int) -> Int {
+        max(0, lives - 1)
+    }
+
+    static func isOutOfLives(_ lives: Int) -> Bool {
+        lives <= 0
+    }
+}
+
+enum RoundLength: Int {
+    case normal = 60
+    case long   = 90
+
+    static func from(stored value: Int) -> RoundLength {
+        return RoundLength(rawValue: value) ?? .normal
     }
 }
 </file>
 
 <file path="TapFrenzyTests/GameLogicTests.swift">
-import XCTest
-@testable import TapFrenzy
+// MARK: Levels (Light It Up)
 
-final class GameLogicTests: XCTestCase {
-
-    // MARK: Timer bar
-
-    func testBarIsFullAtStart() {
-        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 10), 1, accuracy: 0.0001)
+    func testLevelCardCounts() {
+        XCTAssertEqual(Level.l1.cardCount, 3)
+        XCTAssertEqual(Level.l2.cardCount, 4)
+        XCTAssertEqual(Level.l3.cardCount, 6)
+        XCTAssertEqual(Level.l4.cardCount, 9)
     }
 
-    func testBarIsHalfwayAtFiveSeconds() {
-        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 5), 0.5, accuracy: 0.0001)
+    func testLevelGridShapes() {
+        XCTAssertEqual(Level.l1.columns, 3); XCTAssertEqual(Level.l1.rows, 1)   // 3 in a row
+        XCTAssertEqual(Level.l2.columns, 2); XCTAssertEqual(Level.l2.rows, 2)   // 2 x 2
+        XCTAssertEqual(Level.l3.columns, 3); XCTAssertEqual(Level.l3.rows, 2)   // 2 x 3
+        XCTAssertEqual(Level.l4.columns, 3); XCTAssertEqual(Level.l4.rows, 3)   // 3 x 3
     }
 
-    func testBarIsEmptyWhenTimeIsUp() {
-        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 0), 0, accuracy: 0.0001)
+    func testLitWindowsGetShorter() {
+        XCTAssertEqual(Level.l1.litWindow, 1.5, accuracy: 0.0001)
+        XCTAssertEqual(Level.l2.litWindow, 1.2, accuracy: 0.0001)
+        XCTAssertEqual(Level.l3.litWindow, 1.0, accuracy: 0.0001)
+        XCTAssertEqual(Level.l4.litWindow, 0.8, accuracy: 0.0001)
     }
 
-    func testBarShrinksAsTimeRuns() {
-        let earlier = GameLogic.remainingFraction(timeLeft: 7)
-        let later = GameLogic.remainingFraction(timeLeft: 3)
-        XCTAssertLessThan(later, earlier)
+    func testLevelsInA60SecondRound() {
+        XCTAssertEqual(Level.forElapsed(0, roundLength: 60), .l1)
+        XCTAssertEqual(Level.forElapsed(14.9, roundLength: 60), .l1)
+        XCTAssertEqual(Level.forElapsed(15, roundLength: 60), .l2)
+        XCTAssertEqual(Level.forElapsed(29.9, roundLength: 60), .l2)
+        XCTAssertEqual(Level.forElapsed(30, roundLength: 60), .l3)
+        XCTAssertEqual(Level.forElapsed(44.9, roundLength: 60), .l3)
+        XCTAssertEqual(Level.forElapsed(45, roundLength: 60), .l4)
+        XCTAssertEqual(Level.forElapsed(59, roundLength: 60), .l4)
     }
 
-    func testBarIsClamped() {
-        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: 15), 1, accuracy: 0.0001)
-        XCTAssertEqual(GameLogic.remainingFraction(timeLeft: -3), 0, accuracy: 0.0001)
+    func testLevelsScaleWithRoundLength() {
+        XCTAssertEqual(Level.forElapsed(7.4, roundLength: 30), .l1)
+        XCTAssertEqual(Level.forElapsed(7.5, roundLength: 30), .l2)
+        XCTAssertEqual(Level.forElapsed(22.5, roundLength: 90), .l2)
+        XCTAssertEqual(Level.forElapsed(67.5, roundLength: 90), .l4)
     }
 
-    // MARK: Best score
-
-    func testBestScoreKeepsHigherValue() {
-        XCTAssertEqual(GameLogic.updatedBest(currentBest: 40, score: 12), 40)
-        XCTAssertEqual(GameLogic.updatedBest(currentBest: 40, score: 55), 55)
-        XCTAssertEqual(GameLogic.updatedBest(currentBest: 0, score: 0), 0)
+    func testOnlyLevel4AllowsTwoLitCards() {
+        XCTAssertFalse(Level.l1.allowsDoubleLight)
+        XCTAssertFalse(Level.l3.allowsDoubleLight)
+        XCTAssertTrue(Level.l4.allowsDoubleLight)
+        XCTAssertEqual(LightItUpLogic.litCount(for: .l1, roll: 0.0), 1)
+        XCTAssertEqual(LightItUpLogic.litCount(for: .l4, roll: 0.2), 2)
+        XCTAssertEqual(LightItUpLogic.litCount(for: .l4, roll: 0.9), 1)
     }
 
-    // MARK: Status text
-
-    func testStatusText() {
-        XCTAssertEqual(GameLogic.statusText(phase: .idle, timeLeft: 10), "Tap to start")
-        XCTAssertEqual(GameLogic.statusText(phase: .playing, timeLeft: 7.25), "7.2s left")
-        XCTAssertEqual(GameLogic.statusText(phase: .over, timeLeft: 0), "Times up!")
+    func testGapIsStretchedSoOnlyOneCardIsLit() {
+        // L1: window 1.5 + rest 0.25 = 1.75
+        XCTAssertEqual(LightItUpLogic.nextGap(level: .l1, randomGap: 1.0), 1.75, accuracy: 0.0001)
+        XCTAssertEqual(LightItUpLogic.nextGap(level: .l1, randomGap: 1.9), 1.9, accuracy: 0.0001)
+        // L4: window 0.8 + rest 0.25 = 1.05
+        XCTAssertEqual(LightItUpLogic.nextGap(level: .l4, randomGap: 1.0), 1.05, accuracy: 0.0001)
     }
 
-    func testStatusTextDuringTrap() {
-        XCTAssertEqual(GameLogic.statusText(phase: .playing, timeLeft: 5, trapActive: true), "Trap! Don't tap!")
-        // The trap text only shows while playing
-        XCTAssertEqual(GameLogic.statusText(phase: .idle, timeLeft: 10, trapActive: true), "Tap to start")
+    func testLives() {
+        XCTAssertEqual(LightItUpLogic.maxLives, 3)
+        XCTAssertEqual(LightItUpLogic.livesAfterMistake(3), 2)
+        XCTAssertEqual(LightItUpLogic.livesAfterMistake(0), 0)
+        XCTAssertFalse(LightItUpLogic.isOutOfLives(1))
+        XCTAssertTrue(LightItUpLogic.isOutOfLives(0))
     }
 
-    // MARK: Combo (C1)
-
-    func testFirstTapHasNoCombo() {
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: nil), 1)
+    func testRoundLengths() {
+        XCTAssertEqual(RoundLength.short.seconds, 30, accuracy: 0.0001)
+        XCTAssertEqual(RoundLength.normal.seconds, 60, accuracy: 0.0001)
+        XCTAssertEqual(RoundLength.long.seconds, 90, accuracy: 0.0001)
+        XCTAssertEqual(RoundLength.from(stored: 90), .long)
+        XCTAssertEqual(RoundLength.from(stored: 45), .normal)   // unknown value -> 60s
     }
 
-    func testFastTapRaisesMultiplier() {
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: 0.2), 2)
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 2, secondsSinceLastTap: 0.1), 3)
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 3, secondsSinceLastTap: 0.25), 4)
+    func testModesKeepSeparateBestScores() {
+        XCTAssertNotEqual(GameMode.tapFrenzy.bestScoreKey, GameMode.lightItUp.bestScoreKey)
     }
-
-    func testTapExactlyAtWindowStillCounts() {
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 1, secondsSinceLastTap: 0.3), 2)
-    }
-
-    func testSlowTapResetsMultiplier() {
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 4, secondsSinceLastTap: 0.31), 1)
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 2, secondsSinceLastTap: 2.0), 1)
-    }
-
-    func testMultiplierIsCapped() {
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 4, secondsSinceLastTap: 0.1), 5)
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 5, secondsSinceLastTap: 0.1), 5)
-        XCTAssertEqual(GameLogic.nextMultiplier(current: 5, secondsSinceLastTap: 0.1), GameLogic.maxMultiplier)
-    }
-
-    // MARK: Trap colour (C2)
-
-    func testTrapTapDeductsPoints() {
-        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 10), 10 - GameLogic.trapPenalty)
-    }
-
-    func testTrapTapNeverGoesBelowZero() {
-        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 1), 0)
-        XCTAssertEqual(GameLogic.scoreAfterTrapTap(score: 0), 0)
-    }
-
-    func testTrapStartsWhenItsTimeHasCome() {
-        let now = Date(timeIntervalSince1970: 1000)
-        let roundEnd = now.addingTimeInterval(5)
-        XCTAssertTrue(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(-1), roundEnd: roundEnd))
-        XCTAssertTrue(GameLogic.shouldStartTrap(now: now, nextTrap: now, roundEnd: roundEnd))
-    }
-
-    func testTrapDoesNotStartTooEarly() {
-        let now = Date(timeIntervalSince1970: 1000)
-        let roundEnd = now.addingTimeInterval(5)
-        XCTAssertFalse(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(1), roundEnd: roundEnd))
-    }
-
-    func testTrapDoesNotStartIfRoundEndsFirst() {
-        let now = Date(timeIntervalSince1970: 1000)
-        // Only 0.3s left, but a trap lasts 0.5s
-        let roundEnd = now.addingTimeInterval(0.3)
-        XCTAssertFalse(GameLogic.shouldStartTrap(now: now, nextTrap: now.addingTimeInterval(-1), roundEnd: roundEnd))
-    }
-
-    func testTrapSettingsMatchTheBrief() {
-        XCTAssertEqual(GameLogic.trapDuration, 0.5, accuracy: 0.0001)
-        XCTAssertEqual(GameLogic.comboWindow, 0.3, accuracy: 0.0001)
-    }
-}
 </file>
 
 <file path="TapFrenzyUITests/TapFrenzyUITests.swift">
@@ -1943,13 +2872,24 @@ final class TapFrenzyUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
+    // MARK: Home
+
+    func testHomeShowsBothModes() throws {
+        let app = launchApp()
+        XCTAssertTrue(app.buttons["tapFrenzyModeButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["lightItUpModeButton"].exists)
+        XCTAssertTrue(app.buttons["settingsButton"].exists)
+        attach(app, name: "00-home")
+    }
+
+    // MARK: Tap Frenzy
+
     // Plays one full round: start, tap 5 times, check the bar shrinks, wait for the time to run out, check the result.
     func testFullRound() throws {
-        let app = XCUIApplication()
-        // "--reset" clears the saved best score.
+        // "--reset" clears the saved scores.
         // "--ui-testing" turns off the random trap and the combo so the taps can be counted exactly.
-        app.launchArguments = ["--reset", "--ui-testing"]
-        app.launch()
+        let app = launchApp()
+        open("tapFrenzyModeButton", in: app)
 
         // Start screen
         let tapButton = app.buttons["tapButton"]
@@ -1991,9 +2931,8 @@ final class TapFrenzyUITests: XCTestCase {
 
     // The layout must still work when the phone is turned sideways.
     func testLayoutWorksWhenRotated() throws {
-        let app = XCUIApplication()
-        app.launchArguments = ["--reset", "--ui-testing"]
-        app.launch()
+        let app = launchApp()
+        open("tapFrenzyModeButton", in: app)
 
         XCUIDevice.shared.orientation = .landscapeLeft
         sleep(1)   // let the rotation finish
@@ -2016,9 +2955,8 @@ final class TapFrenzyUITests: XCTestCase {
 
     // The best score must be saved on the device (same as force-quitting the app by hand).
     func testBestScoreSurvivesRestart() throws {
-        let app = XCUIApplication()
-        app.launchArguments = ["--reset", "--ui-testing"]
-        app.launch()
+        let app = launchApp()
+        open("tapFrenzyModeButton", in: app)
 
         // Round 1: score 3
         let tapButton = app.buttons["tapButton"]
@@ -2033,6 +2971,7 @@ final class TapFrenzyUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["--ui-testing"]
         app.launch()
+        open("tapFrenzyModeButton", in: app)
 
         // Round 2: score 1. The best score must still be 3.
         XCTAssertTrue(app.buttons["tapButton"].waitForExistence(timeout: 5))
@@ -2040,6 +2979,84 @@ final class TapFrenzyUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["finalScore"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.staticTexts["finalScore"].label, "1")
         XCTAssertEqual(app.staticTexts["bestScore"].label, "Best: 3")
+    }
+
+    // MARK: Light It Up
+
+    // Tapping the lit card gives one point and keeps all 3 lives.
+    func testLightItUpHitScoresAPoint() throws {
+        let app = launchApp()
+        open("lightItUpModeButton", in: app)
+        startLightItUp(app)
+
+        let litCard = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'card' AND value == 'lit'")
+        ).firstMatch
+        XCTAssertTrue(litCard.waitForExistence(timeout: 8), "A card should light up")
+        attach(app, name: "06-lit-card")
+
+        litCard.tap()
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "1")
+        XCTAssertEqual(lives(app), "3")
+    }
+
+    // Tapping a dark card costs one life and gives no points.
+    func testLightItUpWrongTapLosesALife() throws {
+        let app = launchApp()
+        open("lightItUpModeButton", in: app)
+        startLightItUp(app)
+
+        let darkCard = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'card' AND value == 'off'")
+        ).firstMatch
+        XCTAssertTrue(darkCard.waitForExistence(timeout: 5))
+        darkCard.tap()
+
+        XCTAssertEqual(lives(app), "2")
+        XCTAssertEqual(app.staticTexts["scoreValue"].label, "0")
+    }
+
+    // The round length chosen in Settings shows on the Light It Up start screen.
+    func testRoundLengthSettingIsShown() throws {
+        let app = launchApp()
+
+        let settings = app.buttons["settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.tap()
+
+        let thirty = app.buttons["roundLength30"]
+        XCTAssertTrue(thirty.waitForExistence(timeout: 5))
+        thirty.tap()
+        app.buttons["settingsDoneButton"].tap()
+
+        open("lightItUpModeButton", in: app)
+        XCTAssertEqual(app.staticTexts["roundLabel"].label, "30s round")
+    }
+
+    // MARK: Helpers
+
+    private func launchApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["--reset", "--ui-testing"]
+        app.launch()
+        return app
+    }
+
+    // Taps a mode button on the Home screen
+    private func open(_ identifier: String, in app: XCUIApplication) {
+        let button = app.buttons[identifier]
+        XCTAssertTrue(button.waitForExistence(timeout: 5), "\(identifier) should be on Home")
+        button.tap()
+    }
+
+    private func startLightItUp(_ app: XCUIApplication) {
+        let start = app.buttons["startButton"]
+        XCTAssertTrue(start.waitForExistence(timeout: 5), "Start button should be on screen")
+        start.tap()
+    }
+
+    private func lives(_ app: XCUIApplication) -> String {
+        app.descendants(matching: .any)["lives"].value as? String ?? "?"
     }
 
     // Finds the timer bar. A fresh query each time, so the value is current.
